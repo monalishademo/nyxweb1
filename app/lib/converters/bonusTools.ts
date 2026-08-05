@@ -44,8 +44,12 @@ export async function scanQrCode(file: File): Promise<string | null> {
   return code ? code.data : null
 }
 
-export async function imageOcr(file: File, lang = 'eng', logger?: (m: { status: string; progress: number }) => void): Promise<string> {
+export async function imageOcr(
+  file: File,
+  lang = 'eng',
+  _logger?: (m: { status: string; progress: number }) => void
+): Promise<string> {
   const img = await loadImageFromFile(file)
   const canvas = toCanvas(img, 2048)
-  return ocrCanvas(canvas, lang, logger)
+  return ocrCanvas(canvas, lang)
 }
