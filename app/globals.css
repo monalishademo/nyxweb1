@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --btn-bg: #f8fafc;
+  --input-bg: #ffffff;
+}
+
+html.dark {
+  --bg-main: #090d16;
+  --bg-card: #0f172a;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #1e293b;
+  --btn-bg: #1e293b;
+  --input-bg: #0f172a;
+}
+
+html,
+body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Custom theme helper classes */
+.dark-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.dark-btn {
+  background-color: var(--btn-bg) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-input {
+  background-color: var(--input-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.dark-text-muted {
+  color: var(--text-muted) !important;
+}
+
+.dark-text-main {
+  color: var(--text-main) !important;
+}
+
+/* Rubber Stamp Effect */
+.local-stamp {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border: 2px dashed #ef4444;
+  color: #ef4444;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  transform: rotate(-2deg);
+  background: rgba(239, 68, 68, 0.04);
+}
