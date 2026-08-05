@@ -51,6 +51,7 @@ let lameFactory: {
 
 async function getLameFactory() {
   if (lameFactory) return lameFactory
+  // @ts-ignore
   const { default: source } = await import('lamejs/lame.all.js?raw')
   const fn = new Function(source + '\n; return lamejs;')
   lameFactory = fn()
