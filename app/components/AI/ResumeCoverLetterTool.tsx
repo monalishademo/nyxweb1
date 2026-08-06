@@ -44,10 +44,6 @@ type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark
 type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather';
 type Tone = 'formal' | 'modern' | 'confident';
 
-interface ResumeCoverLetterBuilderProps {
-  onBack?: () => void;
-}
-
 interface Personal {
   name: string;
   title: string;
@@ -331,7 +327,7 @@ function SectionHeader({ title, style, color }: { title: string; style: string; 
   }
 }
 
-export default function ResumeCoverLetterBuilder({ onBack }: ResumeCoverLetterBuilderProps) {
+export default function ResumeCoverLetterBuilder() {
   const [mode, setMode] = useState<Mode>('resume');
   const [data, setData] = useState<ResumeData>(EMPTY_DATA);
   const [settings, setSettings] = useState<Settings>({ template: 'modern', color: 'blue', font: 'inter' });
@@ -1185,11 +1181,6 @@ ${current}`;
       `}</style>
 
       <div className="rcb-toolbar">
-        {onBack && (
-          <button className="rcb-tbtn" onClick={onBack}>
-            Back
-          </button>
-        )}
         <div className="rcb-brand">
           <span className="rcb-brand-badge"><FileUser size={16} /></span>
           AI Resume &amp; Cover Letter Builder
