@@ -32,7 +32,51 @@ import {
   FileUser,
   PenLine,
   ArrowLeft,
+  Phone,
+  Mail,
+  MapPin,
+  Globe,
+  Crop,
+  Layers,
+  Sparkle
 } from 'lucide-react';
+
+// Custom LinkedIn Icon SVG Component
+const LinkedinIcon = ({ size = 13, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={style}
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
+// Custom GitHub Icon SVG Component
+const GithubIcon = ({ size = 13, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={style}
+  >
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
 const A4_W = 794;
 const A4_H = 1123;
@@ -40,9 +84,10 @@ const PAGE_PAD = 46;
 const CONTENT_H = A4_H - PAGE_PAD * 2;
 
 type Mode = 'resume' | 'cover';
-type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' | 'executive';
-type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark';
+type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' | 'executive' | 'canva_sidebar' | 'canva_header' | 'canva_minimal';
+type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark' | 'teal' | 'coral';
 type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather';
+type PhotoShape = 'circle' | 'rounded' | 'square';
 type Tone = 'formal' | 'modern' | 'confident';
 
 interface ResumeCoverLetterToolProps {
@@ -53,6 +98,7 @@ interface Personal {
   name: string;
   title: string;
   photo: string;
+  photoShape: PhotoShape;
   phone: string;
   email: string;
   linkedin: string;
@@ -84,6 +130,13 @@ interface ProjectItem {
   link: string;
 }
 
+interface CustomSectionItem {
+  id: string;
+  title: string;
+  type: 'list' | 'text' | 'cards';
+  items: { heading: string; subheading: string; date: string; description: string }[];
+}
+
 interface CoverLetterData {
   jobTitle: string;
   company: string;
@@ -103,6 +156,7 @@ interface ResumeData {
   projects: ProjectItem[];
   achievements: string[];
   hobbies: string[];
+  customSections: CustomSectionItem[];
 }
 
 interface Settings {
@@ -116,6 +170,7 @@ const EMPTY_DATA: ResumeData = {
     name: '',
     title: '',
     photo: '',
+    photoShape: 'circle',
     phone: '',
     email: '',
     linkedin: '',
@@ -132,37 +187,39 @@ const EMPTY_DATA: ResumeData = {
   projects: [{ name: '', description: '', tech: '', link: '' }],
   achievements: [],
   hobbies: [],
+  customSections: [],
 };
 
 const SAMPLE_DATA: ResumeData = {
   personal: {
-    name: 'Rahima Akter',
-    title: 'NGO Executive & Trainer',
+    name: 'Sullab Sinhamahapatra',
+    title: 'Development Professional & IT Specialist',
     photo: '',
-    phone: '+880 1712 345 678',
-    email: 'rahima.akter@email.com',
-    linkedin: 'linkedin.com/in/rahima-akter',
-    portfolio: 'rahimaakter.dev',
-    github: 'github.com/rahima-akter',
-    address: 'Dhaka, Bangladesh',
+    photoShape: 'circle',
+    phone: '+91 96413 46222',
+    email: 'sullabsinha@gmail.com',
+    linkedin: 'linkedin.com/in/sullab-sinha',
+    portfolio: 'sullabsinha.dev',
+    github: 'github.com/sullab',
+    address: 'New Delhi, India',
     summary:
-      'Development professional with 5+ years of experience designing and delivering community training programs, managing donor-funded projects, and building capacity of grassroots organizations in education and livelihood sectors.',
+      'Development professional with extensive experience designing and delivering community training programs, managing donor-funded projects, and building capacity of grassroots organizations in education and IT sectors.',
   },
   experience: [
     {
-      company: 'Bright Future Foundation',
-      designation: 'Program Trainer & Coordinator',
+      company: 'NIIT Foundation',
+      designation: 'Cluster Coordinator / IT Trainer',
       start: 'Jan 2021',
       end: 'Present',
       points: [
-        'Designed and delivered 40+ training modules for 1,200+ participants across 6 districts.',
-        'Managed a donor-funded project budget of $85K, reporting outcomes to 3 international partners.',
-        'Improved course completion rate from 61% to 89% through interactive, skills-first curricula.',
+        'Managed HP Alfa Digitalization project across multiple districts, expanding reach to 2,500+ students.',
+        'Delivered interactive IT & Cybersecurity workshops for grassroots community centers.',
+        'Coordinated with international donors and regional NGOs to monitor educational outcomes.',
       ],
     },
     {
-      company: 'Care & Growth Society',
-      designation: 'Field Officer',
+      company: 'Indus School & Community Project',
+      designation: 'Project Officer',
       start: 'Jun 2018',
       end: 'Dec 2020',
       points: [
@@ -173,22 +230,37 @@ const SAMPLE_DATA: ResumeData = {
     },
   ],
   education: [
-    { school: 'University of Dhaka', degree: 'MSS in Development Studies', years: '2016 – 2018', cgpa: 'CGPA 3.75' },
-    { school: 'University of Dhaka', degree: 'BSS in Sociology', years: '2012 – 2016', cgpa: 'CGPA 3.60' },
+    { school: 'The University of Burdwan', degree: 'Master of Arts (MA in History)', years: '2016 – 2018', cgpa: '1st Class' },
+    { school: 'Khatra Adibasi Mahavidyalaya', degree: 'Bachelor of Arts (BA Hons)', years: '2013 – 2016', cgpa: '1st Class' },
   ],
   skills: ['Training Design', 'Needs Assessment', 'Project Management', 'Monitoring & Evaluation', 'Grant Reporting', 'MS Office', 'Facilitation', 'Stakeholder Engagement'],
   languages: ['Bengali', 'English', 'Hindi'],
-  certifications: ['Project Management for Development (PM4R)', 'ToT – Training of Trainers Certificate', 'Safeguarding & PSEA Training'],
+  certifications: ['Diploma in Computer Application (DCA)', 'Google Digital Marketing Certificate', 'Domestic Data Entry Operator - Skill India', 'CISCO Cyber Suraksha'],
   projects: [
     {
-      name: 'Digital Literacy for Rural Women',
-      description: 'Led a 9-month pilot delivering basic digital skills to 180 rural women; 92% reported new income opportunities after completion.',
+      name: 'HP ALFA School Digitalization',
+      description: 'Led a pilot delivering basic digital skills to rural students and educators; 92% reported improved classroom engagement.',
       tech: 'Curriculum design, community mobilization, partner coordination',
       link: '',
     },
   ],
-  achievements: ['Awarded "Best Trainer 2023" by Bright Future Foundation', 'Invited speaker at the National NGO Capacity-Building Summit 2024'],
+  achievements: ['Awarded "Best Trainer 2023"', 'Invited speaker at the National NGO Capacity-Building Summit'],
   hobbies: ['Volunteering', 'Reading', 'Photography'],
+  customSections: [
+    {
+      id: 'volunteering-1',
+      title: 'Volunteering & Social Work',
+      type: 'cards',
+      items: [
+        {
+          heading: 'Youth Digital Empowerment Drive',
+          subheading: 'Lead Volunteer',
+          date: '2022 - 2023',
+          description: 'Organized free computer literacy camps for underprivileged youth in rural districts.',
+        },
+      ],
+    },
+  ],
 };
 
 const THEME_COLORS: Record<ColorKey, { primary: string; soft: string; text: string; bg: string; muted: string; dark: boolean }> = {
@@ -199,10 +271,12 @@ const THEME_COLORS: Record<ColorKey, { primary: string; soft: string; text: stri
   green: { primary: '#059669', soft: '#d1fae5', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
   orange: { primary: '#ea580c', soft: '#ffedd5', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
   dark: { primary: '#38bdf8', soft: '#0ea5e9', text: '#e2e8f0', bg: '#0f172a', muted: '#94a3b8', dark: true },
+  teal: { primary: '#0d9488', soft: '#ccfbf1', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  coral: { primary: '#e11d48', soft: '#ffe4e6', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
 };
 
 const COLOR_LABELS: Record<ColorKey, string> = {
-  blue: 'Blue', red: 'Red', black: 'Black', purple: 'Purple', green: 'Green', orange: 'Orange', dark: 'Dark',
+  blue: 'Blue', red: 'Red', black: 'Black', purple: 'Purple', green: 'Green', orange: 'Orange', dark: 'Dark', teal: 'Teal', coral: 'Coral',
 };
 
 const FONTS: Record<FontKey, { label: string; family: string }> = {
@@ -214,13 +288,16 @@ const FONTS: Record<FontKey, { label: string; family: string }> = {
   merriweather: { label: 'Merriweather', family: "'Merriweather', serif" },
 };
 
-const TEMPLATES: Record<TemplateKey, { label: string; header: 'center' | 'left' | 'split' | 'band'; section: 'bar' | 'caps' | 'underline' | 'rule' | 'leftline' | 'centerline'; photo: boolean }> = {
+const TEMPLATES: Record<TemplateKey, { label: string; header: 'center' | 'left' | 'split' | 'band' | 'sidebar'; section: 'bar' | 'caps' | 'underline' | 'rule' | 'leftline' | 'centerline'; photo: boolean }> = {
   modern: { label: 'Modern', header: 'center', section: 'bar', photo: true },
   classic: { label: 'Classic', header: 'left', section: 'underline', photo: false },
   corporate: { label: 'Corporate', header: 'split', section: 'caps', photo: false },
   creative: { label: 'Creative', header: 'band', section: 'leftline', photo: true },
   minimal: { label: 'Minimal', header: 'left', section: 'rule', photo: false },
   executive: { label: 'Executive', header: 'center', section: 'centerline', photo: false },
+  canva_sidebar: { label: 'Canva Sidebar', header: 'sidebar', section: 'bar', photo: true },
+  canva_header: { label: 'Canva Banner', header: 'band', section: 'underline', photo: true },
+  canva_minimal: { label: 'Canva Minimal', header: 'left', section: 'bar', photo: true },
 };
 
 const TONE_LABELS: Record<Tone, string> = {
@@ -335,7 +412,7 @@ function SectionHeader({ title, style, color }: { title: string; style: string; 
 export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolProps) {
   const [mode, setMode] = useState<Mode>('resume');
   const [data, setData] = useState<ResumeData>(EMPTY_DATA);
-  const [settings, setSettings] = useState<Settings>({ template: 'modern', color: 'blue', font: 'inter' });
+  const [settings, setSettings] = useState<Settings>({ template: 'canva_sidebar', color: 'blue', font: 'poppins' });
   const [cover, setCover] = useState<CoverLetterData>({
     jobTitle: '',
     company: '',
@@ -363,7 +440,7 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
   const toggleSection = (id: string) =>
     setOpenSections((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
 
-  const patchPersonal = (k: keyof Personal, v: string) =>
+  const patchPersonal = (k: keyof Personal, v: any) =>
     setData((d) => ({ ...d, personal: { ...d.personal, [k]: v } }));
 
   const updateExperience = (i: number, k: keyof ExperienceItem, v: string | string[]) =>
@@ -384,6 +461,23 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
       projects: d.projects.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)),
     }));
 
+  const addCustomSection = (title: string) => {
+    if (!title.trim()) return;
+    const newSec: CustomSectionItem = {
+      id: 'custom-' + Date.now(),
+      title: title.trim(),
+      type: 'cards',
+      items: [{ heading: '', subheading: '', date: '', description: '' }],
+    };
+    setData((d) => ({ ...d, customSections: [...d.customSections, newSec] }));
+    setOpenSections((prev) => [...prev, newSec.id]);
+    showToast(`Added custom section: ${title}`);
+  };
+
+  const removeCustomSection = (id: string) => {
+    setData((d) => ({ ...d, customSections: d.customSections.filter((s) => s.id !== id) }));
+  };
+
   const setTags = (k: 'skills' | 'languages' | 'certifications' | 'achievements' | 'hobbies', v: string[]) =>
     setData((d) => ({ ...d, [k]: v }));
 
@@ -396,9 +490,9 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
 
   const loadSample = () => {
     setData(SAMPLE_DATA);
-    setCover((c) => ({ ...c, jobTitle: 'NGO Executive / Trainer', company: 'Bright Future Foundation', tone: 'formal' }));
+    setCover((c) => ({ ...c, jobTitle: 'Development Professional / IT Trainer', company: 'NIIT Foundation', tone: 'formal' }));
     setMode('resume');
-    showToast('Sample data loaded');
+    showToast('Sample data loaded with +91 New Delhi contact');
   };
 
   const resetAll = () => {
@@ -407,21 +501,35 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
     showToast('Form cleared');
   };
 
+  const getPhotoStyle = (shape: PhotoShape): React.CSSProperties => {
+    if (shape === 'square') return { borderRadius: '4px' };
+    if (shape === 'rounded') return { borderRadius: '16px' };
+    return { borderRadius: '50%' };
+  };
+
   const children = useMemo<React.ReactNode[]>(() => {
     const C = THEME_COLORS[settings.color];
     const f = FONTS[settings.font].family;
     const tpl = TEMPLATES[settings.template];
     const kids: React.ReactNode[] = [];
     const p = data.personal;
-    const contact = [p.email, p.phone, p.address, p.linkedin, p.portfolio, p.github].filter(Boolean);
+    const contact = [
+      p.email && { val: p.email, icon: Mail },
+      p.phone && { val: p.phone, icon: Phone },
+      p.address && { val: p.address, icon: MapPin },
+      p.linkedin && { val: p.linkedin, icon: LinkedinIcon },
+      p.portfolio && { val: p.portfolio, icon: Globe },
+      p.github && { val: p.github, icon: GithubIcon },
+    ].filter(Boolean) as { val: string; icon: any }[];
 
     const renderHeader = () => {
       const name = p.name || 'Your Name';
       const titleText = p.title;
       const contactChips = (color: string) =>
         contact.map((c, i) => (
-          <span key={i} style={{ color }}>
-            {c}
+          <span key={i} style={{ color, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <c.icon size={13} style={{ flexShrink: 0 }} />
+            {c.val}
           </span>
         ));
       const base: React.CSSProperties = { fontFamily: f };
@@ -430,7 +538,7 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
           return (
             <div style={{ textAlign: 'center', ...base }}>
               {tpl.photo && p.photo && (
-                <img src={p.photo} alt="photo" style={{ width: 92, height: 92, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${C.primary}`, marginBottom: 10 }} />
+                <img src={p.photo} alt="photo" style={{ width: 92, height: 92, objectFit: 'cover', border: `3px solid ${C.primary}`, marginBottom: 10, ...getPhotoStyle(p.photoShape) }} />
               )}
               <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: C.dark ? C.text : C.text, letterSpacing: 0.5 }}>{name}</h1>
               {titleText && (
@@ -458,9 +566,9 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
           );
         case 'band':
           return (
-            <div style={{ background: C.primary, color: '#ffffff', padding: 20, textAlign: 'center', ...base }}>
+            <div style={{ background: C.primary, color: '#ffffff', padding: 20, textAlign: 'center', borderRadius: 8, ...base }}>
               {tpl.photo && p.photo && (
-                <img src={p.photo} alt="photo" style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #ffffff', marginBottom: 8 }} />
+                <img src={p.photo} alt="photo" style={{ width: 84, height: 84, objectFit: 'cover', border: '3px solid #ffffff', marginBottom: 8, ...getPhotoStyle(p.photoShape) }} />
               )}
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#ffffff' }}>{name}</h1>
               {titleText && <p style={{ margin: '4px 0 0', fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: 2, textTransform: 'uppercase' }}>{titleText}</p>}
@@ -469,6 +577,23 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
                   {contactChips('rgba(255,255,255,0.92)')}
                 </div>
               )}
+            </div>
+          );
+        case 'sidebar':
+          return (
+            <div style={{ display: 'flex', gap: 16, borderBottom: `2px solid ${C.soft}`, paddingBottom: 12, ...base }}>
+              {p.photo && (
+                <img src={p.photo} alt="photo" style={{ width: 84, height: 84, objectFit: 'cover', border: `3px solid ${C.primary}`, ...getPhotoStyle(p.photoShape) }} />
+              )}
+              <div style={{ flex: 1 }}>
+                <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: C.text }}>{name}</h1>
+                {titleText && <p style={{ margin: '2px 0 0', fontSize: 13, fontWeight: 600, color: C.primary }}>{titleText}</p>}
+                {contact.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', marginTop: 6, fontSize: 11, color: C.muted }}>
+                    {contactChips(C.muted)}
+                  </div>
+                )}
+              </div>
             </div>
           );
         default:
@@ -650,6 +775,26 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
       );
     }
 
+    {/* Custom Sections */}
+    data.customSections.forEach((sec) => {
+      kids.push(
+        section(
+          sec.title,
+          sec.items.map((item, i) => (
+            <div key={i} style={{ marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700, fontSize: 12.5 }}>{item.heading}</span>
+                <span style={{ fontSize: 11, color: C.muted }}>{item.date}</span>
+              </div>
+              {item.subheading && <div style={{ fontSize: 11.5, color: C.primary }}>{item.subheading}</div>}
+              {item.description && <p style={{ margin: '3px 0 0', fontSize: 11.5, color: C.muted }}>{item.description}</p>}
+            </div>
+          )),
+          `sec-${sec.id}`,
+        ),
+      );
+    });
+
     return kids;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, settings]);
@@ -754,20 +899,21 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
       const jsPDF = (window as any).jspdf?.jsPDF;
       const html2canvas = (window as any).html2canvas;
       if (!jsPDF || !html2canvas) throw new Error('libs missing');
-      const pages = Array.from(document.querySelectorAll<HTMLElement>('.rcb-print-page'));
+      
+      const pages = Array.from(document.querySelectorAll<HTMLElement>('.rcb-preview-page'));
+      if (!pages.length) throw new Error('No preview pages found');
+
       const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
       for (let i = 0; i < pages.length; i++) {
         const el = pages[i];
-        const prev = el.style.cssText;
-        el.style.cssText = 'position:fixed;left:-100000px;top:0;display:block;';
-        const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null });
-        el.style.cssText = prev;
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const img = canvas.toDataURL('image/jpeg', 0.95);
         if (i > 0) pdf.addPage('a4', 'portrait');
         pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
       }
       const name = (data.personal.name.trim().replace(/\s+/g, '_') || 'document').toLowerCase();
       pdf.save(`${mode === 'resume' ? 'resume' : 'cover_letter'}_${name}.pdf`);
+      showToast('PDF downloaded successfully!');
     } catch (err) {
       showToast('Direct PDF failed — opening print dialog instead');
       window.print();
@@ -1259,16 +1405,16 @@ ${current}`;
               <FormSection id="personal" icon={<User size={15} />} title="Personal">
                 <Row>
                   <Field label="Full Name">
-                    <input className={inputCls} value={data.personal.name} onChange={(e) => patchPersonal('name', e.target.value)} placeholder="Rahim Uddin" />
+                    <input className={inputCls} value={data.personal.name} onChange={(e) => patchPersonal('name', e.target.value)} placeholder="Sullab Sinhamahapatra" />
                   </Field>
                   <Field label="Target Job Title">
-                    <input className={inputCls} value={data.personal.title} onChange={(e) => patchPersonal('title', e.target.value)} placeholder="Web Developer" />
+                    <input className={inputCls} value={data.personal.title} onChange={(e) => patchPersonal('title', e.target.value)} placeholder="Development Professional" />
                   </Field>
                 </Row>
-                <Field label="Photo">
+                <Field label="Photo & Shape">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {data.personal.photo ? (
-                      <img src={data.personal.photo} alt="avatar" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }} />
+                      <img src={data.personal.photo} alt="avatar" style={{ width: 48, height: 48, objectFit: 'cover', ...getPhotoStyle(data.personal.photoShape) }} />
                     ) : (
                       <span style={{ width: 48, height: 48, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
                         <Upload size={18} />
@@ -1282,13 +1428,25 @@ ${current}`;
                       <button className="rcb-tbtn" onClick={() => patchPersonal('photo', '')}><X size={14} /> Remove</button>
                     )}
                   </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    {(['circle', 'rounded', 'square'] as PhotoShape[]).map((shape) => (
+                      <button
+                        key={shape}
+                        type="button"
+                        className={`rcb-chip-choice ${data.personal.photoShape === shape ? 'rcb-active' : ''}`}
+                        onClick={() => patchPersonal('photoShape', shape)}
+                      >
+                        {shape === 'circle' ? 'Gol (Circle)' : shape === 'rounded' ? 'Rounded' : 'Charkona (Square)'}
+                      </button>
+                    ))}
+                  </div>
                 </Field>
                 <Row>
-                  <Field label="Phone">
-                    <input className={inputCls} value={data.personal.phone} onChange={(e) => patchPersonal('phone', e.target.value)} placeholder="+880 1XXX XXX XXX" />
+                  <Field label="Phone (+91)">
+                    <input className={inputCls} value={data.personal.phone} onChange={(e) => patchPersonal('phone', e.target.value)} placeholder="+91 96413 46222" />
                   </Field>
                   <Field label="Email">
-                    <input className={inputCls} value={data.personal.email} onChange={(e) => patchPersonal('email', e.target.value)} placeholder="you@email.com" />
+                    <input className={inputCls} value={data.personal.email} onChange={(e) => patchPersonal('email', e.target.value)} placeholder="sullabsinha@gmail.com" />
                   </Field>
                 </Row>
                 <Row>
@@ -1303,12 +1461,12 @@ ${current}`;
                   <Field label="GitHub">
                     <input className={inputCls} value={data.personal.github} onChange={(e) => patchPersonal('github', e.target.value)} placeholder="github.com/you" />
                   </Field>
-                  <Field label="Address">
-                    <input className={inputCls} value={data.personal.address} onChange={(e) => patchPersonal('address', e.target.value)} placeholder="Dhaka, Bangladesh" />
+                  <Field label="Address / Location">
+                    <input className={inputCls} value={data.personal.address} onChange={(e) => patchPersonal('address', e.target.value)} placeholder="New Delhi, India" />
                   </Field>
                 </Row>
                 <Field label="Professional Summary">
-                  <textarea className="rcb-textarea" value={data.personal.summary} onChange={(e) => patchPersonal('summary', e.target.value)} placeholder="Experienced Web Developer with 4 years of experience..." />
+                  <textarea className="rcb-textarea" value={data.personal.summary} onChange={(e) => patchPersonal('summary', e.target.value)} placeholder="Experienced professional..." />
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                     <button className="rcb-ai-btn rcb-ai-btn-small" onClick={genSummary} disabled={!!aiBusy}>
                       {aiBusy === 'summary' ? <Loader2 size={12} className="rcb-spin" /> : <Sparkles size={12} />}
@@ -1462,6 +1620,64 @@ ${current}`;
               <FormSection id="hobbies" icon={<Heart size={15} />} title="Hobbies (Optional)">
                 <ChipInput tags={data.hobbies} onChange={(v) => setTags('hobbies', v)} placeholder="Reading, Traveling..." />
               </FormSection>
+
+              <FormSection id="custom-creator" icon={<Layers size={15} />} title="Add Custom Section">
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input id="new-sec-input" className={inputCls} placeholder="e.g. Volunteering, Publications" />
+                  <button
+                    className="rcb-tbtn rcb-primary"
+                    onClick={() => {
+                      const el = document.getElementById('new-sec-input') as HTMLInputElement;
+                      if (el && el.value) {
+                        addCustomSection(el.value);
+                        el.value = '';
+                      }
+                    }}
+                  >
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+              </FormSection>
+
+              {data.customSections.map((sec) => (
+                <FormSection key={sec.id} id={sec.id} icon={<Sparkle size={15} />} title={sec.title}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                    <button className="rcb-icon-btn" onClick={() => removeCustomSection(sec.id)}><Trash2 size={14} /></button>
+                  </div>
+                  {sec.items.map((item, idx) => (
+                    <div key={idx} className="rcb-list-card">
+                      <Field label="Heading / Title">
+                        <input
+                          className={inputCls}
+                          value={item.heading}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setData((d) => ({
+                              ...d,
+                              customSections: d.customSections.map((s) => (s.id === sec.id ? { ...s, items: s.items.map((it, j) => (j === idx ? { ...it, heading: val } : it)) } : s)),
+                            }));
+                          }}
+                          placeholder="e.g. Community Leadership"
+                        />
+                      </Field>
+                      <Field label="Description">
+                        <textarea
+                          className="rcb-textarea"
+                          value={item.description}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setData((d) => ({
+                              ...d,
+                              customSections: d.customSections.map((s) => (s.id === sec.id ? { ...s, items: s.items.map((it, j) => (j === idx ? { ...it, description: val } : it)) } : s)),
+                            }));
+                          }}
+                          placeholder="Details..."
+                        />
+                      </Field>
+                    </div>
+                  ))}
+                </FormSection>
+              ))}
             </>
           ) : (
             <>
@@ -1500,9 +1716,7 @@ ${current}`;
                     style={{ minHeight: 200 }}
                     value={cover.paragraphs.join('\n\n')}
                     onChange={(e) => setCover((c) => ({ ...c, paragraphs: e.target.value.split(/\n\s*\n/).filter(Boolean) }))}
-                    placeholder="Paragraph 1...
-
-Paragraph 2..."
+                    placeholder="Paragraph 1...\n\nParagraph 2..."
                   />
                 </Field>
                 <Row>
