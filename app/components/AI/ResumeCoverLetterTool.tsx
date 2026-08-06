@@ -31,6 +31,7 @@ import {
   RotateCcw,
   FileUser,
   PenLine,
+  ArrowLeft,
 } from 'lucide-react';
 
 const A4_W = 794;
@@ -43,6 +44,10 @@ type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' |
 type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark';
 type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather';
 type Tone = 'formal' | 'modern' | 'confident';
+
+interface ResumeCoverLetterToolProps {
+  onBack?: () => void;
+}
 
 interface Personal {
   name: string;
@@ -327,7 +332,7 @@ function SectionHeader({ title, style, color }: { title: string; style: string; 
   }
 }
 
-export default function ResumeCoverLetterBuilder() {
+export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolProps) {
   const [mode, setMode] = useState<Mode>('resume');
   const [data, setData] = useState<ResumeData>(EMPTY_DATA);
   const [settings, setSettings] = useState<Settings>({ template: 'modern', color: 'blue', font: 'inter' });
@@ -1181,6 +1186,11 @@ ${current}`;
       `}</style>
 
       <div className="rcb-toolbar">
+        {onBack && (
+          <button className="rcb-tbtn" onClick={onBack}>
+            <ArrowLeft size={14} /> Back
+          </button>
+        )}
         <div className="rcb-brand">
           <span className="rcb-brand-badge"><FileUser size={16} /></span>
           AI Resume &amp; Cover Letter Builder
