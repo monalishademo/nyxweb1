@@ -1,490 +1,1542 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import {
   Sparkles,
-  FileUser,
+  Send,
+  RefreshCw,
+  Download,
+  Printer,
   Copy,
   Check,
-  RefreshCw,
-  Send,
+  User,
   Briefcase,
-  Download,
+  GraduationCap,
+  Plus,
+  X,
+  Trash2,
+  ChevronDown,
+  Palette,
+  Type,
+  LayoutGrid,
   Wand2,
+  Loader2,
+  Languages,
+  Award,
+  FolderGit2,
+  Heart,
+  Link2,
+  Upload,
+  FileText,
+  RotateCcw,
+  FileUser,
+  PenLine,
 } from 'lucide-react';
 
-interface ResumeCoverLetterProps {
-  onBack?: () => void;
-}
+const A4_W = 794;
+const A4_H = 1123;
+const PAGE_PAD = 46;
+const CONTENT_H = A4_H - PAGE_PAD * 2;
 
-type DocType = 'full-resume' | 'cover-letter';
+type Mode = 'resume' | 'cover';
+type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' | 'executive';
+type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark';
+type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather';
 type Tone = 'formal' | 'modern' | 'confident';
 
-export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterProps) {
-  const [docType, setDocType] = useState<DocType>('full-resume');
-  const [jobTitle, setJobTitle] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [skills, setSkills] = useState('');
-  const [experienceYears, setExperienceYears] = useState('2');
-  const [applicantName, setApplicantName] = useState('');
-  const [emailPhone, setEmailPhone] = useState('');
-  const [education, setEducation] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [tone, setTone] = useState<Tone>('formal');
+interface Personal {
+  name: string;
+  title: string;
+  photo: string;
+  phone: string;
+  email: string;
+  linkedin: string;
+  portfolio: string;
+  github: string;
+  address: string;
+  summary: string;
+}
 
-  const [generatedOutput, setGeneratedOutput] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+interface ExperienceItem {
+  company: string;
+  designation: string;
+  start: string;
+  end: string;
+  points: string[];
+}
 
-  const sampleTitles = [
-    'NGO Executive / Trainer',
-    'Web Developer',
-    'Cybersecurity Analyst',
-    'IT Instructor',
-  ];
+interface EducationItem {
+  school: string;
+  degree: string;
+  years: string;
+  cgpa: string;
+}
 
-  const toneLabels: Record<Tone, string> = {
-    formal: 'Formal & Traditional',
-    modern: 'Modern & Concise',
-    confident: 'Bold & Confident',
-  };
+interface ProjectItem {
+  name: string;
+  description: string;
+  tech: string;
+  link: string;
+}
 
-  const buildPrompt = () => {
-    const name = applicantName.trim() || 'Candidate';
-    const target = companyName.trim() || 'the target company';
-    const contact = emailPhone.trim() || 'Not specified';
-    const skillList = skills.trim() || 'Not specified';
-    const edu = education.trim() || 'Not specified';
-    const jd = jobDescription.trim();
+interface CoverLetterData {
+  jobTitle: string;
+  company: string;
+  tone: Tone;
+  salutation: string;
+  paragraphs: string[];
+  signoff: string;
+}
 
-    const toneInstruction =
-      tone === 'formal'
-        ? 'Use a formal, traditional professional register with complete sentences and industry-standard phrasing.'
-        : tone === 'modern'
-        ? 'Use a modern, concise style: short punchy bullet points, active verbs, minimal filler words.'
-        : 'Use a confident, achievement-forward style that foregrounds impact and results without sounding boastful.';
+interface ResumeData {
+  personal: Personal;
+  experience: ExperienceItem[];
+  education: EducationItem[];
+  skills: string[];
+  languages: string[];
+  certifications: string[];
+  projects: ProjectItem[];
+  achievements: string[];
+  hobbies: string[];
+}
 
-    const jdBlock = jd
-      ? `\nJob Description to tailor against (mirror its key requirements and keywords naturally, do not copy verbatim):\n"""\n${jd}\n"""\n`
-      : '';
+interface Settings {
+  template: TemplateKey;
+  color: ColorKey;
+  font: FontKey;
+}
 
-    if (docType === 'full-resume') {
-      return `You are an expert resume writer and former recruiter who specializes in ATS-friendly, achievement-driven resumes.
+const EMPTY_DATA: ResumeData = {
+  personal: {
+    name: '',
+    title: '',
+    photo: '',
+    phone: '',
+    email: '',
+    linkedin: '',
+    portfolio: '',
+    github: '',
+    address: '',
+    summary: '',
+  },
+  experience: [{ company: '', designation: '', start: '', end: '', points: [] }],
+  education: [{ school: '', degree: '', years: '', cgpa: '' }],
+  skills: [],
+  languages: [],
+  certifications: [],
+  projects: [{ name: '', description: '', tech: '', link: '' }],
+  achievements: [],
+  hobbies: [],
+};
 
-Write a complete, ready-to-use resume for the candidate below. Do not include any commentary, preamble, or explanation — output only the resume content.
+const SAMPLE_DATA: ResumeData = {
+  personal: {
+    name: 'Rahima Akter',
+    title: 'NGO Executive & Trainer',
+    photo: '',
+    phone: '+880 1712 345 678',
+    email: 'rahima.akter@email.com',
+    linkedin: 'linkedin.com/in/rahima-akter',
+    portfolio: 'rahimaakter.dev',
+    github: 'github.com/rahima-akter',
+    address: 'Dhaka, Bangladesh',
+    summary:
+      'Development professional with 5+ years of experience designing and delivering community training programs, managing donor-funded projects, and building capacity of grassroots organizations in education and livelihood sectors.',
+  },
+  experience: [
+    {
+      company: 'Bright Future Foundation',
+      designation: 'Program Trainer & Coordinator',
+      start: 'Jan 2021',
+      end: 'Present',
+      points: [
+        'Designed and delivered 40+ training modules for 1,200+ participants across 6 districts.',
+        'Managed a donor-funded project budget of $85K, reporting outcomes to 3 international partners.',
+        'Improved course completion rate from 61% to 89% through interactive, skills-first curricula.',
+      ],
+    },
+    {
+      company: 'Care & Growth Society',
+      designation: 'Field Officer',
+      start: 'Jun 2018',
+      end: 'Dec 2020',
+      points: [
+        'Conducted community needs assessments reaching 2,000+ households in rural areas.',
+        'Coordinated livelihood workshops that helped 300+ women start income-generating activities.',
+        'Prepared quarterly impact reports reviewed by national and regional stakeholders.',
+      ],
+    },
+  ],
+  education: [
+    { school: 'University of Dhaka', degree: 'MSS in Development Studies', years: '2016 – 2018', cgpa: 'CGPA 3.75' },
+    { school: 'University of Dhaka', degree: 'BSS in Sociology', years: '2012 – 2016', cgpa: 'CGPA 3.60' },
+  ],
+  skills: ['Training Design', 'Needs Assessment', 'Project Management', 'Monitoring & Evaluation', 'Grant Reporting', 'MS Office', 'Facilitation', 'Stakeholder Engagement'],
+  languages: ['Bengali', 'English', 'Hindi'],
+  certifications: ['Project Management for Development (PM4R)', 'ToT – Training of Trainers Certificate', 'Safeguarding & PSEA Training'],
+  projects: [
+    {
+      name: 'Digital Literacy for Rural Women',
+      description: 'Led a 9-month pilot delivering basic digital skills to 180 rural women; 92% reported new income opportunities after completion.',
+      tech: 'Curriculum design, community mobilization, partner coordination',
+      link: '',
+    },
+  ],
+  achievements: ['Awarded "Best Trainer 2023" by Bright Future Foundation', 'Invited speaker at the National NGO Capacity-Building Summit 2024'],
+  hobbies: ['Volunteering', 'Reading', 'Photography'],
+};
 
-CANDIDATE DETAILS
-Name: ${name}
-Target Job Title: ${jobTitle}
-Target Company: ${target}
-Contact Details: ${contact}
-Key Skills: ${skillList}
-Years of Experience: ${experienceYears}
-Education: ${edu}
-${jdBlock}
-WRITING RULES
-- ${toneInstruction}
-- Every bullet under Work Experience must start with a strong action verb (e.g. "Led", "Built", "Reduced", "Designed") and, wherever the details allow, include a quantifiable result (%, numbers, time saved, revenue, users, scale). If real numbers aren't given, use plausible, clearly-labeled placeholders like "[X]%" rather than inventing hard facts as if they were confirmed.
-- Keep bullets to one line each, no more than ~20 words.
-- Avoid generic filler like "hardworking team player" — show it through accomplishments instead of claiming it.
-- Naturally weave in keywords from the target job title (and job description, if provided) so the resume passes ATS keyword screening.
-- If experience years is low (fresher/1 year), lean more heavily on projects, coursework, certifications, and transferable skills instead of padding fake work history.
+const THEME_COLORS: Record<ColorKey, { primary: string; soft: string; text: string; bg: string; muted: string; dark: boolean }> = {
+  blue: { primary: '#2563eb', soft: '#dbeafe', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  red: { primary: '#dc2626', soft: '#fee2e2', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  black: { primary: '#111827', soft: '#e5e7eb', text: '#111827', bg: '#ffffff', muted: '#4b5563', dark: false },
+  purple: { primary: '#7c3aed', soft: '#ede9fe', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  green: { primary: '#059669', soft: '#d1fae5', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  orange: { primary: '#ea580c', soft: '#ffedd5', text: '#1f2937', bg: '#ffffff', muted: '#4b5563', dark: false },
+  dark: { primary: '#38bdf8', soft: '#0ea5e9', text: '#e2e8f0', bg: '#0f172a', muted: '#94a3b8', dark: true },
+};
 
-OUTPUT FORMAT (use these exact section headers in all caps, each on its own line):
-${name.toUpperCase()}
-${contact}
+const COLOR_LABELS: Record<ColorKey, string> = {
+  blue: 'Blue', red: 'Red', black: 'Black', purple: 'Purple', green: 'Green', orange: 'Orange', dark: 'Dark',
+};
 
-OBJECTIVE
-[2-3 sentence targeted summary tying the candidate's background to the ${jobTitle} role]
+const FONTS: Record<FontKey, { label: string; family: string }> = {
+  inter: { label: 'Inter', family: "'Inter', sans-serif" },
+  poppins: { label: 'Poppins', family: "'Poppins', sans-serif" },
+  roboto: { label: 'Roboto', family: "'Roboto', sans-serif" },
+  opensans: { label: 'Open Sans', family: "'Open Sans', sans-serif" },
+  lato: { label: 'Lato', family: "'Lato', sans-serif" },
+  merriweather: { label: 'Merriweather', family: "'Merriweather', serif" },
+};
 
-CORE SKILLS
-[Comma or bullet separated list, grouped logically if possible e.g. Technical / Soft Skills]
+const TEMPLATES: Record<TemplateKey, { label: string; header: 'center' | 'left' | 'split' | 'band'; section: 'bar' | 'caps' | 'underline' | 'rule' | 'leftline' | 'centerline'; photo: boolean }> = {
+  modern: { label: 'Modern', header: 'center', section: 'bar', photo: true },
+  classic: { label: 'Classic', header: 'left', section: 'underline', photo: false },
+  corporate: { label: 'Corporate', header: 'split', section: 'caps', photo: false },
+  creative: { label: 'Creative', header: 'band', section: 'leftline', photo: true },
+  minimal: { label: 'Minimal', header: 'left', section: 'rule', photo: false },
+  executive: { label: 'Executive', header: 'center', section: 'centerline', photo: false },
+};
 
-WORK EXPERIENCE
-[Reverse-chronological. If no real job history was given, create a section titled "PROJECTS & RELEVANT EXPERIENCE" instead, using realistic project-style entries derived from the skills provided]
+const TONE_LABELS: Record<Tone, string> = {
+  formal: 'Formal & Traditional',
+  modern: 'Modern & Concise',
+  confident: 'Bold & Confident',
+};
 
-EDUCATION
-[Formatted cleanly]
+const REWRITE_STYLES: { key: string; label: string; instruction: string }[] = [
+  { key: 'professional', label: 'Professional', instruction: 'a polished, professional tone with strong vocabulary' },
+  { key: 'short', label: 'Short', instruction: 'an ultra-concise version, cutting every unnecessary word' },
+  { key: 'long', label: 'Long', instruction: 'a detailed, expanded version with more context and specifics' },
+  { key: 'powerful', label: 'Powerful', instruction: 'a bold, achievement-forward version led by strong action verbs' },
+  { key: 'simple', label: 'Simple', instruction: 'a simple, plain-language version any reader can understand' },
+  { key: 'recruiter', label: 'Recruiter Friendly', instruction: 'an ATS-friendly version that naturally includes relevant keywords' },
+];
 
-ADDITIONAL INFORMATION
-[Certifications, languages, tools, or relevant extras implied by the skills/education given]`;
-    }
+const loadFonts = (fonts: string[]) => {
+  if (typeof window === 'undefined') return;
+  const families = fonts.join('&family=');
+  const id = 'rcb-google-fonts';
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'stylesheet';
+  link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
+  document.head.appendChild(link);
+};
 
-    return `You are an expert career coach who writes highly persuasive, tailored cover letters that get interviews.
+const textToLines = (text: string): string[] =>
+  text
+    .split(/\n+/)
+    .map((l) => l.replace(/^[\s•\-*]\s*/, '').trim())
+    .filter(Boolean);
 
-Write a complete, ready-to-send cover letter for the candidate below. Do not include any commentary or explanation — output only the letter itself.
+const commaToTags = (text: string): string[] =>
+  text
+    .split(/[,\n]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
 
-CANDIDATE DETAILS
-Name: ${name}
-Applying for: ${jobTitle}
-Target Company: ${target}
-Contact Details: ${contact}
-Key Skills: ${skillList}
-Years of Experience: ${experienceYears}
-Education: ${edu}
-${jdBlock}
-WRITING RULES
-- ${toneInstruction}
-- Open with a specific, non-generic hook connected to the role or company — never start with "I am writing to apply for..."
-- Middle paragraph(s): connect 2-3 concrete skills/experiences directly to what the role likely needs, with at least one specific example or outcome.
-- Closing paragraph: confident call to action requesting an interview/next step.
-- Keep it to 3-4 short paragraphs, under 350 words total.
-- Include a proper formal salutation ("Dear Hiring Manager," unless a name is implied) and a professional sign-off with the candidate's name.
-- Do not repeat the resume verbatim — this should read as a distinct, narrative complement to it.`;
-  };
-
-  const handleGenerate = async () => {
-    if (!jobTitle.trim()) return;
-
-    setLoading(true);
-    setErrorMsg('');
-    setGeneratedOutput('');
-
-    const prompt = buildPrompt();
-
+async function callAI(prompt: string): Promise<string> {
+  const res = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) {
+    let msg = `Request failed (${res.status})`;
     try {
-      const response = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
+      const d = await res.json();
+      if (d?.error) msg = d.error;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (data?.text) return data.text;
+  throw new Error(data?.error || 'Empty response from AI');
+}
 
-      const data = await response.json();
+function SectionHeader({ title, style, color }: { title: string; style: string; color: { primary: string; text: string; muted: string; dark: boolean } }) {
+  const C = color;
+  const s: React.CSSProperties = { color: C.dark ? C.text : C.text };
+  switch (style) {
+    case 'bar':
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ width: 6, height: 16, background: C.primary, borderRadius: 2 }} />
+          <h3 style={{ ...s, margin: 0, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>{title}</h3>
+        </div>
+      );
+    case 'caps':
+      return (
+        <h3 style={{ ...s, margin: '0 0 10px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, borderBottom: `2px solid ${C.primary}`, paddingBottom: 4 }}>
+          {title}
+        </h3>
+      );
+    case 'underline':
+      return (
+        <h3 style={{ ...s, margin: '0 0 10px', fontSize: 15, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, borderBottom: `1px solid ${C.primary}`, paddingBottom: 4 }}>
+          {title}
+        </h3>
+      );
+    case 'rule':
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <h3 style={{ ...s, margin: 0, fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 2, whiteSpace: 'nowrap' }}>{title}</h3>
+          <div style={{ flex: 1, height: 1, background: C.dark ? '#334155' : '#cbd5e1' }} />
+        </div>
+      );
+    case 'leftline':
+      return (
+        <h3 style={{ ...s, margin: '0 0 10px', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, borderLeft: `4px solid ${C.primary}`, paddingLeft: 8 }}>
+          {title}
+        </h3>
+      );
+    case 'centerline':
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{ flex: 1, height: 1, background: C.primary }} />
+          <h3 style={{ ...s, margin: 0, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, whiteSpace: 'nowrap' }}>{title}</h3>
+          <div style={{ flex: 1, height: 1, background: C.primary }} />
+        </div>
+      );
+    default:
+      return <h3 style={{ ...s, margin: '0 0 8px', fontSize: 15, fontWeight: 700 }}>{title}</h3>;
+  }
+}
 
-      if (data?.text) {
-        setGeneratedOutput(data.text.trim());
-      } else if (data?.error) {
-        setErrorMsg(data.error);
-      } else {
-        setErrorMsg('Could not generate the document. Please check your API configuration.');
+export default function ResumeCoverLetterBuilder() {
+  const [mode, setMode] = useState<Mode>('resume');
+  const [data, setData] = useState<ResumeData>(EMPTY_DATA);
+  const [settings, setSettings] = useState<Settings>({ template: 'modern', color: 'blue', font: 'inter' });
+  const [cover, setCover] = useState<CoverLetterData>({
+    jobTitle: '',
+    company: '',
+    tone: 'formal',
+    salutation: 'Dear Hiring Manager,',
+    paragraphs: [],
+    signoff: 'Sincerely,',
+  });
+  const [openSections, setOpenSections] = useState<string[]>(['personal']);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState('');
+  const [rewrite, setRewrite] = useState<{ title: string; current: string; onApply: (t: string) => void } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [previewScale, setPreviewScale] = useState(0.9);
+
+  const measureRef = useRef<HTMLDivElement>(null);
+  const previewPaneRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(''), 2600);
+  };
+
+  const toggleSection = (id: string) =>
+    setOpenSections((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+
+  const patchPersonal = (k: keyof Personal, v: string) =>
+    setData((d) => ({ ...d, personal: { ...d.personal, [k]: v } }));
+
+  const updateExperience = (i: number, k: keyof ExperienceItem, v: string | string[]) =>
+    setData((d) => ({
+      ...d,
+      experience: d.experience.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)),
+    }));
+
+  const updateEducation = (i: number, k: keyof EducationItem, v: string) =>
+    setData((d) => ({
+      ...d,
+      education: d.education.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)),
+    }));
+
+  const updateProject = (i: number, k: keyof ProjectItem, v: string) =>
+    setData((d) => ({
+      ...d,
+      projects: d.projects.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)),
+    }));
+
+  const setTags = (k: 'skills' | 'languages' | 'certifications' | 'achievements' | 'hobbies', v: string[]) =>
+    setData((d) => ({ ...d, [k]: v }));
+
+  const onPhotoUpload = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => patchPersonal('photo', String(reader.result || ''));
+    reader.readAsDataURL(file);
+  };
+
+  const loadSample = () => {
+    setData(SAMPLE_DATA);
+    setCover((c) => ({ ...c, jobTitle: 'NGO Executive / Trainer', company: 'Bright Future Foundation', tone: 'formal' }));
+    setMode('resume');
+    showToast('Sample data loaded');
+  };
+
+  const resetAll = () => {
+    setData(EMPTY_DATA);
+    setCover({ jobTitle: '', company: '', tone: 'formal', salutation: 'Dear Hiring Manager,', paragraphs: [], signoff: 'Sincerely,' });
+    showToast('Form cleared');
+  };
+
+  const children = useMemo<React.ReactNode[]>(() => {
+    const C = THEME_COLORS[settings.color];
+    const f = FONTS[settings.font].family;
+    const tpl = TEMPLATES[settings.template];
+    const kids: React.ReactNode[] = [];
+    const p = data.personal;
+    const contact = [p.email, p.phone, p.address, p.linkedin, p.portfolio, p.github].filter(Boolean);
+
+    const renderHeader = () => {
+      const name = p.name || 'Your Name';
+      const titleText = p.title;
+      const contactChips = (color: string) =>
+        contact.map((c, i) => (
+          <span key={i} style={{ color }}>
+            {c}
+          </span>
+        ));
+      const base: React.CSSProperties = { fontFamily: f };
+      switch (tpl.header) {
+        case 'center':
+          return (
+            <div style={{ textAlign: 'center', ...base }}>
+              {tpl.photo && p.photo && (
+                <img src={p.photo} alt="photo" style={{ width: 92, height: 92, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${C.primary}`, marginBottom: 10 }} />
+              )}
+              <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: C.dark ? C.text : C.text, letterSpacing: 0.5 }}>{name}</h1>
+              {titleText && (
+                <p style={{ margin: '4px 0 0', fontSize: 14, fontWeight: 600, color: C.primary, letterSpacing: 2, textTransform: 'uppercase' }}>{titleText}</p>
+              )}
+              {contact.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2px 14px', marginTop: 8, fontSize: 11.5, color: C.muted }}>
+                  {contactChips(C.muted)}
+                </div>
+              )}
+              <div style={{ height: 2, background: C.primary, width: 64, margin: '12px auto 0' }} />
+            </div>
+          );
+        case 'split':
+          return (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: `3px solid ${C.primary}`, paddingBottom: 12, ...base }}>
+              <div>
+                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text }}>{name}</h1>
+                {titleText && <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: C.primary }}>{titleText}</p>}
+              </div>
+              <div style={{ textAlign: 'right', fontSize: 11.5, color: C.muted, lineHeight: 1.7 }}>
+                {contactChips(C.muted)}
+              </div>
+            </div>
+          );
+        case 'band':
+          return (
+            <div style={{ background: C.primary, color: '#ffffff', padding: 20, textAlign: 'center', ...base }}>
+              {tpl.photo && p.photo && (
+                <img src={p.photo} alt="photo" style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover', border: '3px solid #ffffff', marginBottom: 8 }} />
+              )}
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: '#ffffff' }}>{name}</h1>
+              {titleText && <p style={{ margin: '4px 0 0', fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: 2, textTransform: 'uppercase' }}>{titleText}</p>}
+              {contact.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2px 14px', marginTop: 8, fontSize: 10.5, color: 'rgba(255,255,255,0.92)' }}>
+                  {contactChips('rgba(255,255,255,0.92)')}
+                </div>
+              )}
+            </div>
+          );
+        default:
+          return (
+            <div style={{ ...base, paddingBottom: 10, borderBottom: `2px solid ${C.soft}` }}>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text }}>{name}</h1>
+              {titleText && <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: C.primary }}>{titleText}</p>}
+              {contact.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 14px', marginTop: 6, fontSize: 11.5, color: C.muted }}>
+                  {contactChips(C.muted)}
+                </div>
+              )}
+            </div>
+          );
       }
-    } catch (err) {
-      console.error(err);
-      setErrorMsg('AI server connection error. Please try again in a moment.');
-    } finally {
-      setLoading(false);
+    };
+
+    kids.push(<div key="rcb-header">{renderHeader()}</div>);
+
+    const section = (title: string, content: React.ReactNode, key: string) => (
+      <div key={key} style={{ marginTop: 16 }}>
+        <SectionHeader title={title} style={tpl.section} color={C} />
+        <div style={{ fontFamily: f, color: C.text, fontSize: 12.5, lineHeight: 1.55 }}>{content}</div>
+      </div>
+    );
+
+    if (p.summary) {
+      kids.push(
+        section('Profile', <p style={{ margin: 0 }}>{p.summary}</p>, 'sec-profile'),
+      );
+    }
+
+    if (data.experience.some((e) => e.company || e.designation)) {
+      kids.push(
+        section(
+          'Work Experience',
+          data.experience
+            .filter((e) => e.company || e.designation)
+            .map((e, i) => (
+              <div key={i} style={{ marginBottom: i < data.experience.length - 1 ? 10 : 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: 13 }}>{e.designation || e.company}</span>
+                    {e.company && e.designation && <span style={{ color: C.muted }}> — {e.company}</span>}
+                  </div>
+                  {(e.start || e.end) && <span style={{ fontSize: 11.5, color: C.muted, whiteSpace: 'nowrap' }}>{e.start}{e.start && e.end ? ' – ' : ''}{e.end}</span>}
+                </div>
+                {e.points.length > 0 && (
+                  <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                    {e.points.map((pt, j) => (
+                      <li key={j} style={{ marginBottom: 3 }}>{pt}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )),
+          'sec-exp',
+        ),
+      );
+    }
+
+    if (data.projects.some((pr) => pr.name)) {
+      kids.push(
+        section(
+          'Projects',
+          data.projects
+            .filter((pr) => pr.name)
+            .map((pr, i) => (
+              <div key={i} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{pr.name}</span>
+                  {(pr.link || pr.tech) && (
+                    <span style={{ fontSize: 10.5, color: C.muted }}>
+                      {pr.tech}
+                      {pr.tech && pr.link ? ' · ' : ''}
+                      {pr.link}
+                    </span>
+                  )}
+                </div>
+                {pr.description && <p style={{ margin: '4px 0 0' }}>{pr.description}</p>}
+              </div>
+            )),
+          'sec-projects',
+        ),
+      );
+    }
+
+    if (data.education.some((ed) => ed.school || ed.degree)) {
+      kids.push(
+        section(
+          'Education',
+          data.education
+            .filter((ed) => ed.school || ed.degree)
+            .map((ed, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <div>
+                  <span style={{ fontWeight: 700, fontSize: 12.5 }}>{ed.degree}</span>
+                  {ed.school && <span style={{ color: C.muted }}> — {ed.school}</span>}
+                </div>
+                <div style={{ fontSize: 11.5, color: C.muted, whiteSpace: 'nowrap' }}>
+                  {ed.years}{ed.years && ed.cgpa ? ' · ' : ''}{ed.cgpa}
+                </div>
+              </div>
+            )),
+          'sec-edu',
+        ),
+      );
+    }
+
+    if (data.skills.length > 0) {
+      kids.push(
+        section(
+          'Core Skills',
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {data.skills.map((s, i) => (
+              <span key={i} style={{ background: C.soft, color: C.dark ? '#e2e8f0' : '#1f2937', borderRadius: 4, padding: '3px 9px', fontSize: 11.5, fontWeight: 500 }}>
+                {s}
+              </span>
+            ))}
+          </div>,
+          'sec-skills',
+        ),
+      );
+    }
+
+    if (data.languages.length > 0) {
+      kids.push(
+        section(
+          'Languages',
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+            {data.languages.map((l, i) => (
+              <span key={i} style={{ fontSize: 12.5 }}>{l}</span>
+            ))}
+          </div>,
+          'sec-lang',
+        ),
+      );
+    }
+
+    if (data.certifications.length > 0) {
+      kids.push(
+        section(
+          'Certifications',
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {data.certifications.map((c, i) => (
+              <li key={i} style={{ marginBottom: 3 }}>{c}</li>
+            ))}
+          </ul>,
+          'sec-cert',
+        ),
+      );
+    }
+
+    if (data.achievements.length > 0) {
+      kids.push(
+        section(
+          'Achievements',
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {data.achievements.map((a, i) => (
+              <li key={i} style={{ marginBottom: 3 }}>{a}</li>
+            ))}
+          </ul>,
+          'sec-achieve',
+        ),
+      );
+    }
+
+    if (data.hobbies.length > 0) {
+      kids.push(
+        section(
+          'Hobbies & Interests',
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+            {data.hobbies.map((h, i) => (
+              <span key={i} style={{ fontSize: 12.5 }}>{h}</span>
+            ))}
+          </div>,
+          'sec-hobbies',
+        ),
+      );
+    }
+
+    return kids;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, settings]);
+
+  const coverChildren = useMemo<React.ReactNode[]>(() => {
+    const C = THEME_COLORS[settings.color];
+    const f = FONTS[settings.font].family;
+    const p = data.personal;
+    const name = p.name || 'Your Name';
+    const contact = [p.email, p.phone, p.address].filter(Boolean);
+    const kids: React.ReactNode[] = [];
+    kids.push(
+      <div key="cv-head" style={{ fontFamily: f, color: C.text }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: C.primary }}>{name}</h1>
+            {p.title && <p style={{ margin: '2px 0 0', fontSize: 12, color: C.muted }}>{p.title}</p>}
+          </div>
+          {contact.length > 0 && (
+            <div style={{ textAlign: 'right', fontSize: 11, color: C.muted, lineHeight: 1.7 }}>
+              {contact.map((c, i) => <div key={i}>{c}</div>)}
+            </div>
+          )}
+        </div>
+        <div style={{ height: 2, background: C.primary, marginTop: 10 }} />
+      </div>,
+    );
+    kids.push(
+      <div key="cv-body" style={{ fontFamily: f, color: C.text, fontSize: 12.5, lineHeight: 1.65, marginTop: 18 }}>
+        <p style={{ margin: '0 0 6px' }}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+        <p style={{ margin: '0 0 14px' }}>{cover.salutation || 'Dear Hiring Manager,'}</p>
+        {(cover.paragraphs.length ? cover.paragraphs : ['Add a brief opening paragraph.', '', 'Describe why you are a strong fit, connecting your skills and experience to the role.', '', 'Close with a confident call to action.']).map((para, i) =>
+          para === '' ? <div key={i} style={{ height: 12 }} /> : <p key={i} style={{ margin: '0 0 10px' }}>{para}</p>,
+        )}
+        <p style={{ margin: '26px 0 0' }}>{cover.signoff || 'Sincerely,'}</p>
+        <p style={{ margin: 0, fontWeight: 700 }}>{name}</p>
+      </div>,
+    );
+    return kids;
+  }, [data, settings, cover]);
+
+  const docChildren = mode === 'resume' ? children : coverChildren;
+
+  const [groups, setGroups] = useState<number[][]>([]);
+
+  useLayoutEffect(() => {
+    const root = measureRef.current;
+    if (!root) return;
+    const list = Array.from(root.children) as HTMLElement[];
+    const g: number[][] = [];
+    let cur: number[] = [];
+    let pageStart = 0;
+    for (let i = 0; i < list.length; i++) {
+      const top = list[i].offsetTop;
+      const bottom = top + list[i].offsetHeight;
+      if (cur.length && bottom - pageStart > CONTENT_H) {
+        g.push(cur);
+        cur = [];
+        pageStart = top;
+      }
+      cur.push(i);
+    }
+    if (cur.length) g.push(cur);
+    setGroups(g);
+  }, [docChildren, mode]);
+
+  useLayoutEffect(() => {
+    const pane = previewPaneRef.current;
+    if (!pane) return;
+    const ro = new ResizeObserver(() => {
+      const w = pane.clientWidth;
+      setPreviewScale(Math.min(1, (w - 48) / A4_W));
+    });
+    ro.observe(pane);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    loadFonts(Object.values(FONTS).map((f) => f.label));
+  }, []);
+
+  const handleCopyDoc = async () => {
+    const doc = mode === 'cover' ? cover.paragraphs.join('\n\n') : '';
+    if (doc) {
+      try {
+        await navigator.clipboard.writeText(doc);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1800);
+      } catch {
+        showToast('Copy failed — select text manually');
+      }
+    } else {
+      showToast(mode === 'resume' ? 'Switch to Cover Letter mode to copy text' : 'Generate a letter first');
     }
   };
 
-  const handleCopy = () => {
-    if (!generatedOutput) return;
-    navigator.clipboard.writeText(generatedOutput);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const downloadPDF = async () => {
+    setPdfBusy(true);
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', 'rcb-html2canvas');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'rcb-jspdf');
+      const jsPDF = (window as any).jspdf?.jsPDF;
+      const html2canvas = (window as any).html2canvas;
+      if (!jsPDF || !html2canvas) throw new Error('libs missing');
+      const pages = Array.from(document.querySelectorAll<HTMLElement>('.rcb-print-page'));
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      for (let i = 0; i < pages.length; i++) {
+        const el = pages[i];
+        const prev = el.style.cssText;
+        el.style.cssText = 'position:fixed;left:-100000px;top:0;display:block;';
+        const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null });
+        el.style.cssText = prev;
+        const img = canvas.toDataURL('image/jpeg', 0.95);
+        if (i > 0) pdf.addPage('a4', 'portrait');
+        pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
+      }
+      const name = (data.personal.name.trim().replace(/\s+/g, '_') || 'document').toLowerCase();
+      pdf.save(`${mode === 'resume' ? 'resume' : 'cover_letter'}_${name}.pdf`);
+    } catch (err) {
+      showToast('Direct PDF failed — opening print dialog instead');
+      window.print();
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
-  const handleDownload = () => {
-    if (!generatedOutput) return;
-    const blob = new Blob([generatedOutput], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const safeName = (applicantName.trim() || 'candidate').replace(/\s+/g, '_');
-    a.href = url;
-    a.download = `${safeName}_${docType === 'full-resume' ? 'resume' : 'cover_letter'}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  const loadScript = (src: string, id: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (document.getElementById(id)) return resolve();
+      const s = document.createElement('script');
+      s.id = id;
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('script load failed'));
+      document.head.appendChild(s);
+    });
+
+  const runAI = async (key: string, prompt: string): Promise<string> => {
+    setAiBusy(key);
+    try {
+      const text = await callAI(prompt);
+      return text.trim();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'AI request failed');
+      throw err;
+    } finally {
+      setAiBusy(null);
+    }
   };
 
-  // Lightweight renderer: makes ALL-CAPS section headers stand out instead of a flat <pre> block.
-  const renderOutput = () => {
-    const lines = generatedOutput.split('\n');
-    return (
-      <div className="space-y-1 text-xs leading-relaxed font-sans">
-        {lines.map((line, i) => {
-          const trimmed = line.trim();
-          const isHeader =
-            trimmed.length > 1 &&
-            trimmed.length < 40 &&
-            trimmed === trimmed.toUpperCase() &&
-            /[A-Z]/.test(trimmed) &&
-            !/^[-•*\d]/.test(trimmed);
+  const genSummary = async () => {
+    const p = data.personal;
+    const skillList = data.skills.length ? data.skills.join(', ') : 'not specified';
+    const prompt = `Write a 2-3 sentence professional summary for a resume.
+Role: ${p.title || 'the target role'}
+Key skills: ${skillList}
+Context: ${p.summary ? p.summary : 'Experience is available in the resume.'}
+Rules: single paragraph, first-person-free, achievement-driven, no preamble, no quotes. Output only the summary.`;
+    try {
+      const text = await runAI('summary', prompt);
+      patchPersonal('summary', text);
+      showToast('Summary generated');
+    } catch {
+      /* handled */
+    }
+  };
 
-          if (isHeader) {
-            return (
-              <div
-                key={i}
-                className="pt-3 pb-1 mt-2 first:mt-0 font-bold text-violet-600 dark:text-violet-400 tracking-wide border-b border-violet-500/20"
-              >
-                {trimmed}
-              </div>
-            );
-          }
-          if (trimmed === '') return <div key={i} className="h-1" />;
+  const improveExperience = async (idx: number) => {
+    const item = data.experience[idx];
+    const src = item.points.join('\n') || 'No details provided yet. Infer 2-3 realistic bullets from the job title and company.';
+    const prompt = `Rewrite the following resume experience bullet points to be professional, ATS-friendly and achievement-driven.
+Start each bullet with a strong action verb. Add quantified results where plausible; if you must invent a number, mark it like [X]%.
+Keep each bullet under ~20 words, one bullet per line, no numbering, no preamble.
+Role: ${item.designation || 'the role'} at ${item.company || 'the company'}
+Input:
+${src}`;
+    try {
+      const text = await runAI('exp-' + idx, prompt);
+      updateExperience(idx, 'points', textToLines(text));
+      showToast('Experience improved with AI');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const suggestSkills = async () => {
+    const prompt = `Suggest the 12 most relevant resume skills for a candidate targeting the role: ${data.personal.title || 'the target role'}.
+Current known skills: ${data.skills.length ? data.skills.join(', ') : 'none'}.
+Return only a comma-separated list, no preamble.`;
+    try {
+      const text = await runAI('skills', prompt);
+      setTags('skills', Array.from(new Set([...data.skills, ...commaToTags(text)])));
+      showToast('Skills suggested');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const suggestCertifications = async () => {
+    const prompt = `Suggest 4-6 relevant professional certifications for a candidate targeting: ${data.personal.title || 'the target role'}.
+Return only a comma-separated list, no preamble.`;
+    try {
+      const text = await runAI('certs', prompt);
+      setTags('certifications', commaToTags(text));
+      showToast('Certifications suggested');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const genAchievements = async () => {
+    const prompt = `Generate 5 professional achievement bullet points for a candidate targeting: ${data.personal.title || 'the target role'}.
+Relevant skills: ${data.skills.length ? data.skills.join(', ') : 'not specified'}.
+Each bullet should start with an action verb, include a quantified result where plausible, under 20 words. One per line, no numbering, no preamble.`;
+    try {
+      const text = await runAI('achieve', prompt);
+      setTags('achievements', textToLines(text));
+      showToast('Achievements generated');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const genCoverLetter = async () => {
+    const p = data.personal;
+    const prompt = `Write a complete cover letter for:
+Name: ${p.name || 'the candidate'}
+Role: ${cover.jobTitle}
+Company: ${cover.company || 'the target company'}
+Tone: ${TONE_LABELS[cover.tone]}
+Skills: ${data.skills.length ? data.skills.join(', ') : 'not specified'}
+Background: ${p.summary || 'experienced professional'}
+Rules:
+- Start with a specific hook, never "I am writing to apply for...".
+- 3 short paragraphs, under 350 words.
+- Connect 2-3 concrete strengths to the role with one specific example.
+- Confident call to action at the end.
+- Return ONLY the letter: salutation line, paragraphs separated by a blank line, and sign-off line.`;
+    try {
+      const text = await runAI('cover', prompt);
+      const lines = text.split('\n').map((l) => l.trim());
+      const sal = lines.find((l) => /^Dear/i.test(l)) || 'Dear Hiring Manager,';
+      const sign = lines.filter((l) => /^(Sincerely|Best regards|Yours|Thanks|Thank you)/i.test(l)).pop() || 'Sincerely,';
+      let paras: string[] = [];
+      let cur = '';
+      for (const l of lines) {
+        if (/^Dear/i.test(l) || /^(Sincerely|Best regards|Yours|Thanks|Thank you)/i.test(l)) continue;
+        if (l === '') {
+          if (cur) paras.push(cur);
+          cur = '';
+        } else {
+          cur = cur ? cur + ' ' + l : l;
+        }
+      }
+      if (cur) paras.push(cur);
+      setCover((c) => ({ ...c, salutation: sal, paragraphs: paras, signoff: sign }));
+      showToast('Cover letter generated');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const applyRewrite = async (style: string, current: string, onApply: (t: string) => void) => {
+    if (aiBusy) return;
+    const rule = REWRITE_STYLES.find((r) => r.key === style);
+    const prompt = `Rewrite the following resume text in ${rule?.instruction || 'a professional tone'}.
+Keep the core facts intact, suitable for an ATS-friendly resume. Output only the rewritten text.
+Text:
+${current}`;
+    try {
+      const text = await runAI('rewrite-' + style, prompt);
+      onApply(text.trim());
+      setRewrite(null);
+      showToast('Rewritten');
+    } catch {
+      /* handled */
+    }
+  };
+
+  const PreviewPane = (
+    <div ref={previewPaneRef} className="rcb-preview-pane">
+      <div style={{ width: A4_W * previewScale, height: A4_H * previewScale + 40, position: 'relative', margin: '0 auto' }}>
+        {groups.map((grp, pi) => {
+          const C = THEME_COLORS[settings.color];
           return (
-            <div key={i} className="dark-text-main whitespace-pre-wrap">
-              {line}
+            <div
+              key={pi}
+              className="rcb-preview-page"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: A4_W,
+                height: A4_H,
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top left',
+                background: C.bg,
+                color: C.text,
+                overflow: 'hidden',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+                fontFamily: FONTS[settings.font].family,
+              }}
+            >
+              <div style={{ padding: PAGE_PAD }}>
+                {grp.map((i) => docChildren[i])}
+              </div>
             </div>
           );
         })}
+        {groups.length === 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: A4_W,
+              height: A4_H,
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+              background: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#9ca3af',
+              fontSize: 15,
+              boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+            }}
+          >
+            Fill in the form to build your CV
+          </div>
+        )}
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 8, color: '#6b7280', fontSize: 12 }}>
+        {groups.length} page{groups.length === 1 ? '' : 's'} · A4 · live preview
+      </div>
+    </div>
+  );
+
+  const PrintDoc = (
+    <div className="rcb-print-root" style={{ display: 'none' }}>
+      {groups.map((grp, pi) => {
+        const C = THEME_COLORS[settings.color];
+        return (
+          <div
+            key={pi}
+            className="rcb-print-page"
+            style={{
+              width: A4_W,
+              height: A4_H,
+              background: C.bg,
+              color: C.text,
+              overflow: 'hidden',
+              padding: PAGE_PAD,
+              boxSizing: 'border-box',
+              pageBreakAfter: 'always',
+              fontFamily: FONTS[settings.font].family,
+              WebkitPrintColorAdjust: 'exact',
+              printColorAdjust: 'exact',
+            }}
+          >
+            {grp.map((i) => docChildren[i])}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <label className="rcb-field">
+      <span className="rcb-field-label">{label}</span>
+      {children}
+    </label>
+  );
+
+  const inputCls = 'rcb-input';
+  const ChipInput = ({
+    tags,
+    onChange,
+    placeholder,
+    suggest,
+    suggestBusy,
+  }: {
+    tags: string[];
+    onChange: (v: string[]) => void;
+    placeholder: string;
+    suggest?: () => void;
+    suggestBusy?: boolean;
+  }) => {
+    const [val, setVal] = useState('');
+    const add = () => {
+      const newTags = commaToTags(val);
+      if (newTags.length) onChange(Array.from(new Set([...tags, ...newTags])));
+      setVal('');
+    };
+    return (
+      <div className="rcb-chip-wrap">
+        <div className="rcb-chip-list">
+          {tags.map((t, i) => (
+            <span key={i} className="rcb-chip">
+              {t}
+              <button type="button" className="rcb-chip-x" onClick={() => onChange(tags.filter((_, j) => j !== i))}>
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            className={inputCls}
+            style={{ flex: 1 }}
+            value={val}
+            placeholder={placeholder}
+            onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                add();
+              }
+            }}
+            onBlur={add}
+          />
+          {suggest && (
+            <button type="button" className="rcb-ai-btn rcb-ai-btn-small" onClick={suggest} disabled={!!suggestBusy}>
+              {suggestBusy ? <Loader2 size={12} className="rcb-spin" /> : <Sparkles size={12} />}
+              AI Suggest
+            </button>
+          )}
+        </div>
       </div>
     );
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>AI Career Builder</span>
+  const FormSection = ({
+    id,
+    icon,
+    title,
+    right,
+    children,
+  }: {
+    id: string;
+    icon: React.ReactNode;
+    title: string;
+    right?: React.ReactNode;
+    children: React.ReactNode;
+  }) => {
+    const open = openSections.includes(id);
+    return (
+      <div className="rcb-form-section">
+        <div className="rcb-form-section-head" onClick={() => toggleSection(id)}>
+          <span className="rcb-form-section-title">
+            {icon}
+            {title}
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {right}
+            <ChevronDown size={16} className={`rcb-chev ${open ? 'rcb-open' : ''}`} />
+          </span>
         </div>
-        <h2 className="text-3xl font-bold dark-text-main">AI Resume & Cover Letter Builder</h2>
-        <p className="dark-text-muted text-sm max-w-lg mx-auto">
-          Generate complete, ATS-friendly resumes and tailored cover letters powered by AI.
-        </p>
+        {open && <div className="rcb-form-section-body">{children}</div>}
       </div>
+    );
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="dark-card border rounded-2xl p-6 shadow-md space-y-4">
-          <h3 className="text-lg font-bold dark-text-main flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-violet-500" />
-            <span>Job & Personal Details</span>
-          </h3>
+  const Row = ({ children }: { children: React.ReactNode }) => (
+    <div style={{ display: 'flex', gap: 8 }}>{children}</div>
+  );
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setDocType('full-resume')}
-              className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-                docType === 'full-resume'
-                  ? 'bg-violet-600 text-white border-violet-600'
-                  : 'dark-btn hover:border-violet-400'
-              }`}
-            >
-              Full Resume
-            </button>
-            <button
-              type="button"
-              onClick={() => setDocType('cover-letter')}
-              className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
-                docType === 'cover-letter'
-                  ? 'bg-violet-600 text-white border-violet-600'
-                  : 'dark-btn hover:border-violet-400'
-              }`}
-            >
-              Cover Letter
-            </button>
-          </div>
+  return (
+    <div className="rcb-root">
+      <style>{`
+        .rcb-root{ --rcb-brand:#2563eb; display:flex; flex-direction:column; height:100%; min-height:640px; background:#f1f5f9; font-family:inherit; color:#1f2937; border-radius:12px; overflow:hidden; }
+        .rcb-toolbar{ display:flex; align-items:center; gap:10px; padding:10px 16px; background:#ffffff; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
+        .rcb-brand{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:15px; color:#111827; }
+        .rcb-brand .rcb-brand-badge{ width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff; }
+        .rcb-seg{ display:flex; background:#eef2ff; border-radius:8px; padding:3px; }
+        .rcb-seg button{ border:none; background:transparent; padding:6px 14px; border-radius:6px; font-size:13px; font-weight:600; color:#475569; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .rcb-seg button.rcb-active{ background:#2563eb; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+        .rcb-tbtn{ display:flex; align-items:center; gap:6px; border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:6px 10px; font-size:12.5px; font-weight:600; color:#374151; cursor:pointer; transition:all .15s; }
+        .rcb-tbtn:hover{ border-color:#2563eb; color:#2563eb; }
+        .rcb-tbtn:disabled{ opacity:.55; cursor:not-allowed; }
+        .rcb-tbtn.rcb-primary{ background:#2563eb; border-color:#2563eb; color:#fff; }
+        .rcb-tbtn.rcb-primary:hover{ background:#1d4ed8; }
+        .rcb-main{ display:flex; flex:1; min-height:0; }
+        .rcb-form-panel{ width:420px; min-width:360px; background:#ffffff; border-right:1px solid #e5e7eb; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+        .rcb-preview-pane{ flex:1; overflow-y:auto; padding:20px 16px; min-width:0; }
+        .rcb-form-section{ border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; background:#fafafa; }
+        .rcb-form-section-head{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; cursor:pointer; background:#fff; user-select:none; }
+        .rcb-form-section-head:hover{ background:#f8fafc; }
+        .rcb-form-section-title{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:700; color:#111827; }
+        .rcb-form-section-title svg{ color:#2563eb; }
+        .rcb-form-section-body{ padding:12px; display:flex; flex-direction:column; gap:10px; border-top:1px solid #eef2f7; }
+        .rcb-chev{ transition:transform .18s; }
+        .rcb-chev.rcb-open{ transform:rotate(180deg); }
+        .rcb-field{ display:flex; flex-direction:column; gap:4px; }
+        .rcb-field-label{ font-size:11.5px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.4px; }
+        .rcb-input, .rcb-textarea{ border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:13px; font-family:inherit; outline:none; transition:border-color .15s, box-shadow .15s; background:#fff; color:#111827; width:100%; box-sizing:border-box; }
+        .rcb-input:focus, .rcb-textarea:focus{ border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+        .rcb-textarea{ resize:vertical; min-height:64px; line-height:1.5; }
+        .rcb-ai-btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; border-radius:8px; padding:8px 12px; font-size:12.5px; font-weight:700; cursor:pointer; transition:opacity .15s, transform .1s; }
+        .rcb-ai-btn:hover{ opacity:.92; transform:translateY(-1px); }
+        .rcb-ai-btn:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+        .rcb-ai-btn.rcb-ai-btn-small{ padding:5px 9px; font-size:11.5px; }
+        .rcb-icon-btn{ display:inline-flex; align-items:center; justify-content:center; border:1px solid #d1d5db; background:#fff; border-radius:8px; width:30px; height:30px; color:#374151; cursor:pointer; }
+        .rcb-icon-btn:hover{ border-color:#ef4444; color:#ef4444; }
+        .rcb-chip-wrap{ display:flex; flex-direction:column; gap:8px; }
+        .rcb-chip-list{ display:flex; flex-wrap:wrap; gap:6px; min-height:26px; }
+        .rcb-chip{ display:inline-flex; align-items:center; gap:5px; background:#eef2ff; color:#3730a3; border-radius:999px; padding:3px 8px; font-size:12px; font-weight:600; }
+        .rcb-chip-x{ display:inline-flex; border:none; background:transparent; color:#6d28d9; cursor:pointer; padding:0; }
+        .rcb-chip-x:hover{ color:#111827; }
+        .rcb-add-btn{ border:1px dashed #cbd5e1; background:#fff; border-radius:8px; padding:7px; font-size:12.5px; font-weight:600; color:#475569; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
+        .rcb-add-btn:hover{ border-color:#2563eb; color:#2563eb; }
+        .rcb-list-card{ border:1px solid #e5e7eb; border-radius:8px; padding:10px; background:#fff; display:flex; flex-direction:column; gap:8px; }
+        .rcb-card-head{ display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:#374151; }
+        .rcb-toolsbar{ display:flex; align-items:center; gap:8px; padding:8px 14px; background:#ffffff; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
+        .rcb-tools-label{ display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.4px; }
+        .rcb-chip-choice{ border:1px solid #d1d5db; background:#fff; border-radius:999px; padding:3px 10px; font-size:11.5px; font-weight:600; color:#374151; cursor:pointer; }
+        .rcb-chip-choice.rcb-active{ background:#2563eb; border-color:#2563eb; color:#fff; }
+        .rcb-swatch{ width:22px; height:22px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #d1d5db; cursor:pointer; }
+        .rcb-swatch.rcb-active{ box-shadow:0 0 0 2px #2563eb; }
+        .rcb-rewrite-menu{ display:flex; flex-wrap:wrap; gap:6px; padding:10px; }
+        .rcb-rewrite-menu button{ border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:6px 10px; font-size:12px; font-weight:600; color:#374151; cursor:pointer; }
+        .rcb-rewrite-menu button:hover{ border-color:#7c3aed; color:#7c3aed; }
+        .rcb-toast{ position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:#111827; color:#fff; padding:9px 16px; border-radius:10px; font-size:13px; font-weight:600; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.25); }
+        .rcb-spin{ animation:rcb-spin 1s linear infinite; }
+        @keyframes rcb-spin{ to{ transform:rotate(360deg);} }
+        @media print {
+          body *{ visibility:hidden !important; }
+          .rcb-print-root, .rcb-print-root *{ visibility:visible !important; }
+          .rcb-print-root{ display:block !important; position:absolute; left:0; top:0; }
+          .rcb-print-page{ box-shadow:none !important; margin:0 !important; }
+          @page{ size:A4; margin:0; }
+          *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+        }
+      `}</style>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Your Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Sullab Sinha"
-                value={applicantName}
-                onChange={(e) => setApplicantName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Target Job Title *</label>
-              <input
-                type="text"
-                placeholder="e.g. IT Trainer / Developer"
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-xs font-semibold dark-text-muted">Quick Job Titles:</span>
-            <div className="flex flex-wrap gap-1">
-              {sampleTitles.map((t, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setJobTitle(t)}
-                  className="text-xs px-2 py-1 rounded-lg dark-btn border hover:border-violet-400 text-left cursor-pointer"
-                >
-                  💼 {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Company / Organization</label>
-              <input
-                type="text"
-                placeholder="e.g. NIIT Foundation"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Contact Info / Email</label>
-              <input
-                type="text"
-                placeholder="e.g. email@gmail.com | Phone"
-                value={emailPhone}
-                onChange={(e) => setEmailPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main">Key Skills (Comma separated)</label>
-            <input
-              type="text"
-              placeholder="e.g. Training, Linux, OSINT, React"
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Education / Degree</label>
-              <input
-                type="text"
-                placeholder="e.g. Bachelor Degree"
-                value={education}
-                onChange={(e) => setEducation(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold dark-text-main mb-1">Experience</label>
-              <select
-                value={experienceYears}
-                onChange={(e) => setExperienceYears(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500"
-              >
-                <option value="1">Fresher / 1 Year</option>
-                <option value="2">2 - 3 Years</option>
-                <option value="5">5+ Years</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main flex items-center gap-1.5">
-              <Wand2 className="w-3.5 h-3.5 text-violet-500" />
-              Writing Tone
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {(Object.keys(toneLabels) as Tone[]).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTone(t)}
-                  className={`py-1.5 text-[11px] font-semibold rounded-lg border transition-all cursor-pointer ${
-                    tone === t
-                      ? 'bg-violet-600 text-white border-violet-600'
-                      : 'dark-btn hover:border-violet-400'
-                  }`}
-                >
-                  {toneLabels[t]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main">
-              Paste Job Description <span className="dark-text-muted font-normal">(optional, but improves matching)</span>
-            </label>
-            <textarea
-              placeholder="Paste the job posting here so the AI can tailor keywords and requirements..."
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              rows={3}
-              className="w-full px-3.5 py-2.5 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={loading || !jobTitle.trim()}
-            className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Generating Document...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Generate {docType === 'full-resume' ? 'Full Resume' : 'Cover Letter'}</span>
-              </>
-            )}
+      <div className="rcb-toolbar">
+        <div className="rcb-brand">
+          <span className="rcb-brand-badge"><FileUser size={16} /></span>
+          AI Resume &amp; Cover Letter Builder
+        </div>
+        <div className="rcb-seg">
+          <button className={mode === 'resume' ? 'rcb-active' : ''} onClick={() => setMode('resume')}>
+            <FileText size={14} /> Resume
+          </button>
+          <button className={mode === 'cover' ? 'rcb-active' : ''} onClick={() => setMode('cover')}>
+            <PenLine size={14} /> Cover Letter
           </button>
         </div>
+        <div style={{ flex: 1 }} />
+        <button className="rcb-tbtn" onClick={loadSample}><Sparkles size={14} /> Load Sample</button>
+        <button className="rcb-tbtn" onClick={resetAll}><RotateCcw size={14} /> Reset</button>
+        <button className="rcb-tbtn" onClick={handleCopyDoc}>
+          {copied ? <Check size={14} /> : <Copy size={14} />} Copy
+        </button>
+        <button className="rcb-tbtn rcb-primary" onClick={downloadPDF} disabled={pdfBusy}>
+          {pdfBusy ? <Loader2 size={14} className="rcb-spin" /> : <Download size={14} />}
+          Download PDF (A4)
+        </button>
+        <button className="rcb-tbtn" onClick={() => window.print()}><Printer size={14} /> Print</button>
+      </div>
 
-        <div className="dark-card border rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between border-b pb-3 mb-4 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold dark-text-main">Generated Document</h3>
-              {generatedOutput && !loading && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleGenerate}
-                    title="Regenerate"
-                    className="p-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-violet-500 hover:text-white text-xs font-medium transition-all cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDownload}
-                    className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-violet-500 hover:text-white text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCopy}
-                    className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-violet-500 hover:text-white text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? 'Copied!' : 'Copy Text'}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+      <div className="rcb-toolsbar">
+        <span className="rcb-tools-label"><LayoutGrid size={13} /> Template</span>
+        {(Object.keys(TEMPLATES) as TemplateKey[]).map((t) => (
+          <button
+            key={t}
+            className={`rcb-chip-choice ${settings.template === t ? 'rcb-active' : ''}`}
+            onClick={() => setSettings((s) => ({ ...s, template: t }))}
+          >
+            {TEMPLATES[t].label}
+          </button>
+        ))}
+        <span style={{ width: 1, height: 20, background: '#e5e7eb' }} />
+        <span className="rcb-tools-label"><Palette size={13} /> Color</span>
+        {(Object.keys(THEME_COLORS) as ColorKey[]).map((c) => (
+          <span
+            key={c}
+            title={COLOR_LABELS[c]}
+            className={`rcb-swatch ${settings.color === c ? 'rcb-active' : ''}`}
+            style={{ background: THEME_COLORS[c].primary }}
+            onClick={() => setSettings((s) => ({ ...s, color: c }))}
+          />
+        ))}
+        <span style={{ width: 1, height: 20, background: '#e5e7eb' }} />
+        <span className="rcb-tools-label"><Type size={13} /> Font</span>
+        <select
+          className="rcb-input"
+          style={{ width: 150 }}
+          value={settings.font}
+          onChange={(e) => setSettings((s) => ({ ...s, font: e.target.value as FontKey }))}
+        >
+          {(Object.keys(FONTS) as FontKey[]).map((fk) => (
+            <option key={fk} value={fk}>{FONTS[fk].label}</option>
+          ))}
+        </select>
+      </div>
 
-            {loading ? (
-              <div className="text-center py-20 space-y-3">
-                <RefreshCw className="w-8 h-8 text-violet-500 animate-spin mx-auto" />
-                <p className="text-sm dark-text-muted font-medium">AI is crafting your document...</p>
-              </div>
-            ) : errorMsg ? (
-              <div className="text-center py-16 space-y-3">
-                <p className="text-sm text-red-500 font-medium">{errorMsg}</p>
-                <button
-                  type="button"
-                  onClick={handleGenerate}
-                  className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold cursor-pointer"
-                >
-                  Try Again
+      <div className="rcb-main">
+        <div className="rcb-form-panel">
+          {mode === 'resume' ? (
+            <>
+              <FormSection id="personal" icon={<User size={15} />} title="Personal">
+                <Row>
+                  <Field label="Full Name">
+                    <input className={inputCls} value={data.personal.name} onChange={(e) => patchPersonal('name', e.target.value)} placeholder="Rahim Uddin" />
+                  </Field>
+                  <Field label="Target Job Title">
+                    <input className={inputCls} value={data.personal.title} onChange={(e) => patchPersonal('title', e.target.value)} placeholder="Web Developer" />
+                  </Field>
+                </Row>
+                <Field label="Photo">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {data.personal.photo ? (
+                      <img src={data.personal.photo} alt="avatar" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ width: 48, height: 48, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
+                        <Upload size={18} />
+                      </span>
+                    )}
+                    <label className="rcb-tbtn" style={{ cursor: 'pointer' }}>
+                      <Upload size={14} /> Upload
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => onPhotoUpload(e.target.files?.[0])} />
+                    </label>
+                    {data.personal.photo && (
+                      <button className="rcb-tbtn" onClick={() => patchPersonal('photo', '')}><X size={14} /> Remove</button>
+                    )}
+                  </div>
+                </Field>
+                <Row>
+                  <Field label="Phone">
+                    <input className={inputCls} value={data.personal.phone} onChange={(e) => patchPersonal('phone', e.target.value)} placeholder="+880 1XXX XXX XXX" />
+                  </Field>
+                  <Field label="Email">
+                    <input className={inputCls} value={data.personal.email} onChange={(e) => patchPersonal('email', e.target.value)} placeholder="you@email.com" />
+                  </Field>
+                </Row>
+                <Row>
+                  <Field label="LinkedIn">
+                    <input className={inputCls} value={data.personal.linkedin} onChange={(e) => patchPersonal('linkedin', e.target.value)} placeholder="linkedin.com/in/you" />
+                  </Field>
+                  <Field label="Portfolio">
+                    <input className={inputCls} value={data.personal.portfolio} onChange={(e) => patchPersonal('portfolio', e.target.value)} placeholder="yoursite.dev" />
+                  </Field>
+                </Row>
+                <Row>
+                  <Field label="GitHub">
+                    <input className={inputCls} value={data.personal.github} onChange={(e) => patchPersonal('github', e.target.value)} placeholder="github.com/you" />
+                  </Field>
+                  <Field label="Address">
+                    <input className={inputCls} value={data.personal.address} onChange={(e) => patchPersonal('address', e.target.value)} placeholder="Dhaka, Bangladesh" />
+                  </Field>
+                </Row>
+                <Field label="Professional Summary">
+                  <textarea className="rcb-textarea" value={data.personal.summary} onChange={(e) => patchPersonal('summary', e.target.value)} placeholder="Experienced Web Developer with 4 years of experience..." />
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button className="rcb-ai-btn rcb-ai-btn-small" onClick={genSummary} disabled={!!aiBusy}>
+                      {aiBusy === 'summary' ? <Loader2 size={12} className="rcb-spin" /> : <Sparkles size={12} />}
+                      Generate with AI
+                    </button>
+                    <button className="rcb-tbtn" onClick={() => setRewrite({ title: 'Summary', current: data.personal.summary, onApply: (t) => patchPersonal('summary', t) })}>
+                      <Wand2 size={13} /> AI Rewrite
+                    </button>
+                  </div>
+                </Field>
+              </FormSection>
+
+              <FormSection id="experience" icon={<Briefcase size={15} />} title="Experience">
+                {data.experience.map((item, i) => (
+                  <div key={i} className="rcb-list-card">
+                    <div className="rcb-card-head">
+                      <span>Experience #{i + 1}</span>
+                      <button className="rcb-icon-btn" onClick={() => setData((d) => ({ ...d, experience: d.experience.filter((_, j) => j !== i) }))} disabled={data.experience.length === 1}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <Field label="Company">
+                      <input className={inputCls} value={item.company} onChange={(e) => updateExperience(i, 'company', e.target.value)} placeholder="Company name" />
+                    </Field>
+                    <Field label="Designation">
+                      <input className={inputCls} value={item.designation} onChange={(e) => updateExperience(i, 'designation', e.target.value)} placeholder="Job title" />
+                    </Field>
+                    <Row>
+                      <Field label="Start">
+                        <input className={inputCls} value={item.start} onChange={(e) => updateExperience(i, 'start', e.target.value)} placeholder="Jan 2021" />
+                      </Field>
+                      <Field label="End">
+                        <input className={inputCls} value={item.end} onChange={(e) => updateExperience(i, 'end', e.target.value)} placeholder="Present" />
+                      </Field>
+                    </Row>
+                    <Field label="Responsibilities (one per line)">
+                      <textarea className="rcb-textarea" value={item.points.join('\n')} onChange={(e) => updateExperience(i, 'points', textToLines(e.target.value))} placeholder={'Led team of 5 developers\nImproved load time by 40%'} />
+                    </Field>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <button className="rcb-ai-btn rcb-ai-btn-small" onClick={() => improveExperience(i)} disabled={!!aiBusy}>
+                        {aiBusy === `exp-${i}` ? <Loader2 size={12} className="rcb-spin" /> : <Sparkles size={12} />}
+                        Improve with AI
+                      </button>
+                      <span style={{ fontSize: 11, color: '#6b7280' }}>Action verbs · Quantified results · ATS friendly</span>
+                    </div>
+                  </div>
+                ))}
+                <button className="rcb-add-btn" onClick={() => setData((d) => ({ ...d, experience: [...d.experience, { company: '', designation: '', start: '', end: '', points: [] }] }))}>
+                  <Plus size={14} /> Add Experience
                 </button>
-              </div>
-            ) : generatedOutput ? (
-              <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-h-[500px] overflow-y-auto">
-                {renderOutput()}
-              </div>
-            ) : (
-              <div className="text-center py-20 dark-text-muted space-y-2">
-                <FileUser className="w-12 h-12 mx-auto opacity-20" />
-                <p className="text-sm">Your generated {docType === 'full-resume' ? 'resume' : 'cover letter'} will appear here.</p>
-              </div>
-            )}
+              </FormSection>
+
+              <FormSection id="education" icon={<GraduationCap size={15} />} title="Education">
+                {data.education.map((item, i) => (
+                  <div key={i} className="rcb-list-card">
+                    <div className="rcb-card-head">
+                      <span>Education #{i + 1}</span>
+                      <button className="rcb-icon-btn" onClick={() => setData((d) => ({ ...d, education: d.education.filter((_, j) => j !== i) }))} disabled={data.education.length === 1}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <Field label="School / University">
+                      <input className={inputCls} value={item.school} onChange={(e) => updateEducation(i, 'school', e.target.value)} placeholder="University of Dhaka" />
+                    </Field>
+                    <Field label="Degree">
+                      <input className={inputCls} value={item.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)} placeholder="BSc in Computer Science" />
+                    </Field>
+                    <Row>
+                      <Field label="Years">
+                        <input className={inputCls} value={item.years} onChange={(e) => updateEducation(i, 'years', e.target.value)} placeholder="2018 – 2022" />
+                      </Field>
+                      <Field label="CGPA / Grade">
+                        <input className={inputCls} value={item.cgpa} onChange={(e) => updateEducation(i, 'cgpa', e.target.value)} placeholder="CGPA 3.80" />
+                      </Field>
+                    </Row>
+                  </div>
+                ))}
+                <button className="rcb-add-btn" onClick={() => setData((d) => ({ ...d, education: [...d.education, { school: '', degree: '', years: '', cgpa: '' }] }))}>
+                  <Plus size={14} /> Add Education
+                </button>
+              </FormSection>
+
+              <FormSection id="skills" icon={<Sparkles size={15} />} title="Skills">
+                <ChipInput
+                  tags={data.skills}
+                  onChange={(v) => setTags('skills', v)}
+                  placeholder="Type a skill and press Enter"
+                  suggest={suggestSkills}
+                  suggestBusy={aiBusy === 'skills'}
+                />
+                <span style={{ fontSize: 11, color: '#6b7280' }}>Press Enter or comma to add. AI can suggest skills for your role.</span>
+              </FormSection>
+
+              <FormSection id="languages" icon={<Languages size={15} />} title="Languages">
+                <ChipInput tags={data.languages} onChange={(v) => setTags('languages', v)} placeholder="Bengali, English..." />
+              </FormSection>
+
+              <FormSection id="certifications" icon={<Award size={15} />} title="Certifications">
+                <ChipInput
+                  tags={data.certifications}
+                  onChange={(v) => setTags('certifications', v)}
+                  placeholder="Add a certification"
+                  suggest={suggestCertifications}
+                  suggestBusy={aiBusy === 'certs'}
+                />
+              </FormSection>
+
+              <FormSection id="projects" icon={<FolderGit2 size={15} />} title="Projects">
+                {data.projects.map((item, i) => (
+                  <div key={i} className="rcb-list-card">
+                    <div className="rcb-card-head">
+                      <span>Project #{i + 1}</span>
+                      <button className="rcb-icon-btn" onClick={() => setData((d) => ({ ...d, projects: d.projects.filter((_, j) => j !== i) }))} disabled={data.projects.length === 1}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <Field label="Project Name">
+                      <input className={inputCls} value={item.name} onChange={(e) => updateProject(i, 'name', e.target.value)} placeholder="E-commerce Platform" />
+                    </Field>
+                    <Field label="Description">
+                      <textarea className="rcb-textarea" value={item.description} onChange={(e) => updateProject(i, 'description', e.target.value)} placeholder="Short description and outcome..." />
+                    </Field>
+                    <Row>
+                      <Field label="Tech / Stack">
+                        <input className={inputCls} value={item.tech} onChange={(e) => updateProject(i, 'tech', e.target.value)} placeholder="React, Node, PostgreSQL" />
+                      </Field>
+                      <Field label="Link">
+                        <input className={inputCls} value={item.link} onChange={(e) => updateProject(i, 'link', e.target.value)} placeholder="github.com/you/project" />
+                      </Field>
+                    </Row>
+                    <button className="rcb-ai-btn rcb-ai-btn-small" onClick={() => setRewrite({ title: `Project: ${item.name || 'Untitled'}`, current: item.description, onApply: (t) => updateProject(i, 'description', t) })} disabled={!!aiBusy}>
+                      <Wand2 size={12} /> AI Improve
+                    </button>
+                  </div>
+                ))}
+                <button className="rcb-add-btn" onClick={() => setData((d) => ({ ...d, projects: [...d.projects, { name: '', description: '', tech: '', link: '' }] }))}>
+                  <Plus size={14} /> Add Project
+                </button>
+              </FormSection>
+
+              <FormSection id="achievements" icon={<Award size={15} />} title="Achievements">
+                <ChipInput
+                  tags={data.achievements}
+                  onChange={(v) => setTags('achievements', v)}
+                  placeholder="Add an achievement"
+                  suggest={genAchievements}
+                  suggestBusy={aiBusy === 'achieve'}
+                />
+              </FormSection>
+
+              <FormSection id="hobbies" icon={<Heart size={15} />} title="Hobbies (Optional)">
+                <ChipInput tags={data.hobbies} onChange={(v) => setTags('hobbies', v)} placeholder="Reading, Traveling..." />
+              </FormSection>
+            </>
+          ) : (
+            <>
+              <FormSection id="cv-details" icon={<PenLine size={15} />} title="Cover Letter Details">
+                <Row>
+                  <Field label="Job Title">
+                    <input className={inputCls} value={cover.jobTitle} onChange={(e) => setCover((c) => ({ ...c, jobTitle: e.target.value }))} placeholder="NGO Executive / Trainer" />
+                  </Field>
+                  <Field label="Company">
+                    <input className={inputCls} value={cover.company} onChange={(e) => setCover((c) => ({ ...c, company: e.target.value }))} placeholder="Target company" />
+                  </Field>
+                </Row>
+                <Field label="Tone">
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                      <button
+                        key={t}
+                        className={`rcb-chip-choice ${cover.tone === t ? 'rcb-active' : ''}`}
+                        onClick={() => setCover((c) => ({ ...c, tone: t }))}
+                      >
+                        {TONE_LABELS[t]}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+                <button className="rcb-ai-btn" onClick={genCoverLetter} disabled={!!aiBusy || !cover.jobTitle.trim()}>
+                  {aiBusy === 'cover' ? <Loader2 size={15} className="rcb-spin" /> : <Sparkles size={15} />}
+                  Generate Cover Letter with AI
+                </button>
+                <Field label="Salutation">
+                  <input className={inputCls} value={cover.salutation} onChange={(e) => setCover((c) => ({ ...c, salutation: e.target.value }))} />
+                </Field>
+                <Field label="Body Paragraphs (edit after AI)">
+                  <textarea
+                    className="rcb-textarea"
+                    style={{ minHeight: 200 }}
+                    value={cover.paragraphs.join('\n\n')}
+                    onChange={(e) => setCover((c) => ({ ...c, paragraphs: e.target.value.split(/\n\s*\n/).filter(Boolean) }))}
+                    placeholder="Paragraph 1...
+
+Paragraph 2..."
+                  />
+                </Field>
+                <Row>
+                  <Field label="Sign-off">
+                    <input className={inputCls} value={cover.signoff} onChange={(e) => setCover((c) => ({ ...c, signoff: e.target.value }))} />
+                  </Field>
+                </Row>
+              </FormSection>
+            </>
+          )}
+        </div>
+
+        {PreviewPane}
+      </div>
+
+      {PrintDoc}
+
+      <div style={{ display: 'none' }} ref={measureRef}>
+        {docChildren}
+      </div>
+
+      {rewrite && (
+        <div className="rcb-rewrite-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.5)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setRewrite(null)}>
+          <div style={{ background: '#fff', borderRadius: 14, maxWidth: 460, width: '92%', boxShadow: '0 20px 60px rgba(0,0,0,.3)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #eef2f7' }}>
+              <span style={{ fontWeight: 800, fontSize: 14 }}>AI Rewrite — {rewrite.title}</span>
+              <button className="rcb-icon-btn" onClick={() => setRewrite(null)}><X size={14} /></button>
+            </div>
+            <div style={{ padding: '0 16px 8px', fontSize: 12.5, color: '#6b7280', maxHeight: 120, overflowY: 'auto', whiteSpace: 'pre-wrap', borderBottom: '1px solid #eef2f7' }}>
+              {rewrite.current || 'No text yet — fill the field first.'}
+            </div>
+            <div className="rcb-rewrite-menu">
+              {REWRITE_STYLES.map((r) => (
+                <button key={r.key} onClick={() => applyRewrite(r.key, rewrite.current, rewrite.onApply)} disabled={!!aiBusy}>
+                  {aiBusy === 'rewrite-' + r.key ? <Loader2 size={12} className="rcb-spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> : <Wand2 size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />}
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {toast && <div className="rcb-toast">{toast}</div>}
     </div>
   );
 }
