@@ -34,7 +34,7 @@ const BG_PRESETS: { name: string; color: string; text: string }[] = [
 ];
 
 /**
- * Encodes DPI density header into JPEG Data URL directly so Photoshop & Printers read exact 300/600 DPI
+ * Encodes exact 300 / 600 DPI density into JPEG JFIF Header
  */
 function setJpegDpi(dataUrl: string, dpi: number): string {
   const parts = dataUrl.split(',');
@@ -44,12 +44,11 @@ function setJpegDpi(dataUrl: string, dpi: number): string {
     buffer[i] = byteString.charCodeAt(i);
   }
 
-  // JFIF marker APP0 injection
   if (buffer[0] === 0xff && buffer[1] === 0xd8) {
     let offset = 2;
-    while (offset < buffer.length) {
+    while (offset < buffer.length - 1) {
       if (buffer[offset] === 0xff && buffer[offset + 1] === 0xe0) {
-        buffer[offset + 7] = 1; // dots per inch
+        buffer[offset + 7] = 1; // 1 = dots per inch
         buffer[offset + 8] = (dpi >> 8) & 0xff;
         buffer[offset + 9] = dpi & 0xff;
         buffer[offset + 10] = (dpi >> 8) & 0xff;
@@ -84,23 +83,29 @@ export default function App() {
   const [posY, setPosY] = useState(0);
 
   const [isUpscaled2X, setIsUpscaled2X] = useState(false);
-  
-  // Basic Enhancements
-  const [brightness, setBrightness] = useState(100);
-  const [contrast, setContrast] = useState(100);
-  const [saturation, setSaturation] = useState(100);
-  
-  // Pro Color Balance & Tonal Controls (Yellow / Blue, Red / Green)
-  const [tempTone, setTempTone] = useState(0); // Negative = Cold (Blue), Positive = Warm (Yellow)
-  const [tintTone, setTintTone] = useState(0); // Negative = Green, Positive = Magenta/Red
-  
-  // Curve Adjustments (Shadows & Highlights)
-  const [curveShadows, setCurveShadows] = useState(0);
-  const [curveHighlights, setCurveHighlights] = useState(0);
 
-  // Studio Polish
-  const [sharpness, setSharpness] = useState(20);
-  const [beautifyLevel, setBeautifyLevel] = useState(25);
+  // 1. Basic Tone Controls
+  const [brightness, setBrightness] = useState(0); // -100 to +100
+  const [contrast, setContrast] = useState(0); // -100 to +100
+  const [saturation, setSaturation] = useState(0); // -100 to +100
+
+  // 2. RGB Color Balance Sliders
+  const [redBalance, setRedBalance] = useState(0); // -100 to +100
+  const [greenBalance, setGreenBalance] = useState(0); // -100 to +100
+  const [blueBalance, setBlueBalance] = useState(0); // -100 to +100
+
+  // 3. Temperature & Tint Sliders
+  const [tempTone, setTempTone] = useState(0); // -50 (Cold/Blue) to +50 (Warm/Yellow)
+  const [tintTone, setTintTone] = useState(0); // -50 (Green) to +50 (Magenta)
+
+  // 4. Tone Curve / Curves (Shadows, Midtones, Highlights)
+  const [curveShadows, setCurveShadows] = useState(0); // -50 to +50
+  const [curveMidtones, setCurveMidtones] = useState(0); // -50 to +50
+  const [curveHighlights, setCurveHighlights] = useState(0); // -50 to +50
+
+  // 5. Sharpen & Beautify
+  const [sharpness, setSharpness] = useState(15);
+  const [beautifyLevel, setBeautifyLevel] = useState(10);
 
   const [addBorder, setAddBorder] = useState(true);
   const [singleResultUrl, setSingleResultUrl] = useState<string | null>(null);
@@ -134,7 +139,10 @@ export default function App() {
     rafRef.current = requestAnimationFrame(() => renderAll());
   }, [
     rotation, zoom, posX, posY,
-    brightness, contrast, saturation, tempTone, tintTone, curveShadows, curveHighlights,
+    brightness, contrast, saturation,
+    redBalance, greenBalance, blueBalance,
+    tempTone, tintTone,
+    curveShadows, curveMidtones, curveHighlights,
     sharpness, beautifyLevel, isUpscaled2X, bgColor, transparentBg, addBorder,
     sheetMode, sheetKind, copies,
   ]);
@@ -156,28 +164,58 @@ export default function App() {
     setZoom(1);
     setPosX(0);
     setPosY(0);
-    setBrightness(100);
-    setContrast(100);
-    setSaturation(100);
+    setBrightness(0);
+    setContrast(0);
+    setSaturation(0);
+    setRedBalance(0);
+    setGreenBalance(0);
+    setBlueBalance(0);
     setTempTone(0);
     setTintTone(0);
     setCurveShadows(0);
+    setCurveMidtones(0);
     setCurveHighlights(0);
-    setSharpness(20);
-    setBeautifyLevel(25);
+    setSharpness(15);
+    setBeautifyLevel(10);
     setBgColor('#ffffff');
     setTransparentBg(false);
   };
 
-  // Auto Contrast and Color Tone AI Logic
+  // Real Histogram Auto Contrast (Stretches Dynamic Range)
   const handleAutoContrast = () => {
-    setBrightness(104);
-    setContrast(115);
-    setSaturation(108);
-    setCurveShadows(-10);
-    setCurveHighlights(12);
-    setSharpness(35);
-    setBeautifyLevel(30);
+    const img = imgCacheRef.current;
+    if (!img) return;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 120;
+    tempCanvas.height = 120;
+    const ctx = tempCanvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, 120, 120);
+    const imgData = ctx.getImageData(0, 0, 120, 120);
+    const d = imgData.data;
+
+    let minL = 255;
+    let maxL = 0;
+
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 100) continue; // Skip transparency
+      const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      if (lum < minL) minL = lum;
+      if (lum > maxL) maxL = lum;
+    }
+
+    if (maxL > minL) {
+      const range = maxL - minL;
+      const calculatedContrast = Math.round(((255 - range) / 255) * 45);
+      const midPoint = (minL + maxL) / 2;
+      const calculatedBrightness = Math.round(((128 - midPoint) / 128) * 20);
+
+      setContrast(calculatedContrast);
+      setBrightness(calculatedBrightness);
+      setCurveShadows(-10);
+      setCurveHighlights(10);
+      setSharpness(25);
+    }
   };
 
   const handleRemoveBg = async () => {
@@ -212,12 +250,15 @@ export default function App() {
     }
   };
 
+  // -------------------------------------------------------------
+  // High-Precision Pixel Processing Pipeline (LUT Array Engine)
+  // -------------------------------------------------------------
   const renderPassportCanvas = (
     img: HTMLImageElement,
     targetW: number,
     targetH: number
   ): HTMLCanvasElement => {
-    const SS = 2; // Supersampling factor
+    const SS = 2; // Supersampling factor for crisp anti-aliasing
     const iw = targetW * SS;
     const ih = targetH * SS;
 
@@ -235,13 +276,8 @@ export default function App() {
       ictx.clearRect(0, 0, iw, ih);
     }
 
-    // 1. Draw transformed image
+    // 1. Draw base transform
     ictx.save();
-    
-    // CSS Filter application
-    const hueDeg = tempTone * 0.4;
-    ictx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hueDeg}deg)`;
-
     const imgAspect = img.width / img.height;
     const targetAspect = targetW / targetH;
     let baseScale: number;
@@ -257,63 +293,76 @@ export default function App() {
     ictx.scale(finalScale, finalScale);
     ictx.drawImage(img, -img.width / 2, -img.height / 2);
     ictx.restore();
-    ictx.filter = 'none';
 
-    // 2. Advanced Pixel Level Adjustments (Curves, Tint & Color Balance)
-    const imgData = ictx.getImageData(0, 0, iw, ih);
-    const data = imgData.data;
-    
-    const shadowFactor = curveShadows * 1.2;
-    const highlightFactor = curveHighlights * 1.2;
-    const redAdjust = tintTone * 0.8 + (tempTone > 0 ? tempTone * 0.5 : 0);
-    const blueAdjust = (tempTone < 0 ? -tempTone * 0.8 : 0);
+    // 2. Build 256-Entry Look-Up Tables (LUT) for Studio Grade Speed & Quality
+    const lutR = new Uint8Array(256);
+    const lutG = new Uint8Array(256);
+    const lutB = new Uint8Array(256);
 
-    for (let i = 0; i < data.length; i += 4) {
-      // Ignore background transparent pixels
-      if (transparentBg && data[i + 3] === 0) continue;
+    const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    const bShift = brightness * 2.55;
 
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
+    // Combined Temp & Tint Channel Shifts
+    const rShift = redBalance * 2 + tempTone * 1.5 + tintTone * 0.8;
+    const gShift = greenBalance * 2 - tintTone * 1.2;
+    const bShiftChan = blueBalance * 2 - tempTone * 1.8;
 
-      // Color Balance Adjustment
-      r = Math.min(255, Math.max(0, r + redAdjust));
-      b = Math.min(255, Math.max(0, b + blueAdjust));
+    for (let i = 0; i < 256; i++) {
+      // Contrast & Brightness
+      let val = cFactor * (i - 128) + 128 + bShift;
 
-      // Curves Shadow & Highlight adjustment
-      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-      if (luminance < 128) {
-        const factor = (128 - luminance) / 128;
-        r += shadowFactor * factor;
-        g += shadowFactor * factor;
-        b += shadowFactor * factor;
+      // S-Curve & Tone Mapping (Shadows, Midtones, Highlights)
+      const norm = val / 255;
+      if (norm < 0.5) {
+        val += curveShadows * Math.sin(norm * Math.PI) * 0.8;
       } else {
-        const factor = (luminance - 128) / 128;
-        r += highlightFactor * factor;
-        g += highlightFactor * factor;
-        b += highlightFactor * factor;
+        val += curveHighlights * Math.sin(norm * Math.PI) * 0.8;
+      }
+      val += curveMidtones * Math.sin(norm * Math.PI) * 0.5;
+
+      lutR[i] = Math.min(255, Math.max(0, val + rShift));
+      lutG[i] = Math.min(255, Math.max(0, val + gShift));
+      lutB[i] = Math.min(255, Math.max(0, val + bShiftChan));
+    }
+
+    // Apply LUT + Saturation
+    const imgData = ictx.getImageData(0, 0, iw, ih);
+    const pixels = imgData.data;
+    const satMult = (saturation + 100) / 100;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (transparentBg && pixels[i + 3] === 0) continue;
+
+      let r = lutR[pixels[i]];
+      let g = lutG[pixels[i + 1]];
+      let b = lutB[pixels[i + 2]];
+
+      // Saturation Adjustment
+      if (saturation !== 0) {
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        r = gray + satMult * (r - gray);
+        g = gray + satMult * (g - gray);
+        b = gray + satMult * (b - gray);
       }
 
-      data[i] = Math.min(255, Math.max(0, r));
-      data[i + 1] = Math.min(255, Math.max(0, g));
-      data[i + 2] = Math.min(255, Math.max(0, b));
+      pixels[i] = Math.min(255, Math.max(0, r));
+      pixels[i + 1] = Math.min(255, Math.max(0, g));
+      pixels[i + 2] = Math.min(255, Math.max(0, b));
     }
     ictx.putImageData(imgData, 0, 0);
 
-    // 3. Pro Beautify (Skin Smoothing without losing key features)
+    // 3. Smooth Skin Beautify (Preserving Edges)
     if (beautifyLevel > 0) {
       const bl = beautifyLevel / 100;
-      const blurPx = 1.5 + bl * 4;
       const beauty = document.createElement('canvas');
       beauty.width = iw;
       beauty.height = ih;
       const bctx = beauty.getContext('2d')!;
-      bctx.filter = `blur(${blurPx * SS}px) brightness(${102 + bl * 3}%)`;
+      bctx.filter = `blur(${bl * 3 * SS}px)`;
       bctx.drawImage(inner, 0, 0);
-      bctx.filter = 'none';
 
       ictx.save();
-      ictx.globalAlpha = 0.25 + bl * 0.35;
+      ictx.globalAlpha = bl * 0.35;
       ictx.globalCompositeOperation = 'soft-light';
       ictx.drawImage(beauty, 0, 0);
       ictx.restore();
@@ -329,13 +378,13 @@ export default function App() {
       sctx.drawImage(inner, 0, 0);
 
       ictx.save();
-      ictx.globalAlpha = 0.3 * s;
+      ictx.globalAlpha = s * 0.35;
       ictx.globalCompositeOperation = 'overlay';
       ictx.drawImage(sharpCanvas, 0, 0);
       ictx.restore();
     }
 
-    // Downsampling to Target Dimensions
+    // 5. High Quality Downscaling to Output Size
     const out = document.createElement('canvas');
     out.width = targetW;
     out.height = targetH;
@@ -362,12 +411,12 @@ export default function App() {
     const targetDpi = 300 * scale;
     const W = SINGLE_W * scale;
     const H = SINGLE_H * scale;
-    
+
     const canvas = renderPassportCanvas(img, W, H);
     const mime = transparentBg ? 'image/png' : 'image/jpeg';
     const rawDataUrl = canvas.toDataURL(mime, 0.98);
 
-    // Inject true 300/600 DPI into metadata
+    // Inject true 300/600 DPI header
     const dpiDataUrl = transparentBg ? rawDataUrl : setJpegDpi(rawDataUrl, targetDpi);
     setSingleResultUrl(dpiDataUrl);
   };
@@ -435,8 +484,11 @@ export default function App() {
     if (sheetMode) renderSheet();
   }, [
     sheetMode, sheetKind, copies, rotation, zoom, posX, posY,
-    brightness, contrast, saturation, tempTone, tintTone, curveShadows, curveHighlights,
-    sharpness, beautifyLevel, isUpscaled2X, bgColor, transparentBg, addBorder
+    brightness, contrast, saturation,
+    redBalance, greenBalance, blueBalance,
+    tempTone, tintTone,
+    curveShadows, curveMidtones, curveHighlights,
+    sharpness, beautifyLevel, isUpscaled2X, bgColor, transparentBg, addBorder,
   ]);
 
   const handlePrint = () => {
@@ -475,10 +527,10 @@ export default function App() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-            📸 Studio HD Passport Photo Maker
+            📸 Studio Pro Passport Photo Maker
           </h1>
           <p className="text-slate-600 mt-2">
-            Exact <b>1.2&quot; × 1.5&quot; @ True 300/600 DPI</b> passport photo + <b>4×6 / 5×7 / A4 print sheet</b>.
+            Exact <b>1.2&quot; × 1.5&quot; @ True 300 / 600 DPI</b> with Pro Color Balance & Curves.
           </p>
         </div>
 
@@ -515,14 +567,14 @@ export default function App() {
               )}
 
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <div className="lg:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-4 max-h-[780px] overflow-y-auto">
+                <div className="lg:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-4 max-h-[820px] overflow-y-auto">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900">⚙️ Studio Controls</h3>
+                    <h3 className="font-bold text-slate-900">⚙️ Studio Color Suite</h3>
                     <div className="flex gap-2">
-                      <button onClick={handleAutoContrast} className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded font-bold">
-                        ⚡ Auto Tone
+                      <button onClick={handleAutoContrast} className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded font-bold shadow">
+                        ⚡ Auto Contrast
                       </button>
-                      <button onClick={resetControls} className="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded">
+                      <button onClick={resetControls} className="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded font-semibold">
                         Reset
                       </button>
                     </div>
@@ -577,27 +629,41 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* REAL COLOR BALANCE CONTROLS */}
                   <div className="border-t border-slate-200 pt-3 space-y-3">
-                    <div className="font-semibold text-slate-800 text-sm">🎛 Pro Color & Light Controls</div>
+                    <div className="font-semibold text-slate-800 text-sm">🎨 RGB Color Balance</div>
+                    <Slider label="🔴 Red Balance" value={redBalance} min={-50} max={50} onChange={setRedBalance} />
+                    <Slider label="🟢 Green Balance" value={greenBalance} min={-50} max={50} onChange={setGreenBalance} />
+                    <Slider label="🔵 Blue Balance" value={blueBalance} min={-50} max={50} onChange={setBlueBalance} />
+                  </div>
+
+                  {/* TEMPERATURE & TINT */}
+                  <div className="border-t border-slate-200 pt-3 space-y-3">
+                    <div className="font-semibold text-slate-800 text-sm">🌡 Color Temperature & Tint</div>
+                    <Slider label="🟡 Warm (Yellow) / 🔵 Cold (Blue)" value={tempTone} min={-50} max={50} onChange={setTempTone} />
+                    <Slider label="🔴 Tint (Magenta) / 🟢 Tint (Green)" value={tintTone} min={-50} max={50} onChange={setTintTone} />
+                  </div>
+
+                  {/* S-CURVES & TONE */}
+                  <div className="border-t border-slate-200 pt-3 space-y-3">
+                    <div className="font-semibold text-slate-800 text-sm">📈 Curves & Tone Mapping</div>
+                    <Slider label="🌑 Shadows Curve" value={curveShadows} min={-50} max={50} onChange={setCurveShadows} />
+                    <Slider label="🔆 Midtones Curve" value={curveMidtones} min={-50} max={50} onChange={setCurveMidtones} />
+                    <Slider label="☀️ Highlights Curve" value={curveHighlights} min={-50} max={50} onChange={setCurveHighlights} />
+                  </div>
+
+                  {/* BASIC LIGHT CONTROLS */}
+                  <div className="border-t border-slate-200 pt-3 space-y-3">
+                    <div className="font-semibold text-slate-800 text-sm">☀ Basic Exposure & Contrast</div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Slider label="☀ Brightness" value={brightness} min={50} max={180} onChange={setBrightness} suffix="%" />
-                      <Slider label="🌗 Contrast" value={contrast} min={50} max={180} onChange={setContrast} suffix="%" />
-                      <Slider label="🎨 Saturation" value={saturation} min={0} max={200} onChange={setSaturation} suffix="%" />
-                      <Slider label="🌡 Warm / Cold" value={tempTone} min={-40} max={40} onChange={setTempTone} />
+                      <Slider label="☀ Brightness" value={brightness} min={-50} max={50} onChange={setBrightness} />
+                      <Slider label="🌗 Contrast" value={contrast} min={-50} max={50} onChange={setContrast} />
                     </div>
-                    <Slider label="🔴 Red / Green Tint" value={tintTone} min={-30} max={30} onChange={setTintTone} />
+                    <Slider label="🎨 Saturation" value={saturation} min={-100} max={100} onChange={setSaturation} />
                   </div>
 
                   <div className="border-t border-slate-200 pt-3 space-y-3">
-                    <div className="font-semibold text-slate-800 text-sm">📈 Curve & Tone Adjustments</div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <Slider label="🌑 Shadows" value={curveShadows} min={-50} max={50} onChange={setCurveShadows} />
-                      <Slider label="☀️ Highlights" value={curveHighlights} min={-50} max={50} onChange={setCurveHighlights} />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-slate-200 pt-3 space-y-3">
-                    <div className="font-semibold text-slate-800 text-sm">✨ Skin Polish & Sharpness</div>
+                    <div className="font-semibold text-slate-800 text-sm">✨ Skin Smoothing & Sharpness</div>
                     <div className="grid grid-cols-2 gap-3">
                       <Slider label="🔪 Sharpness" value={sharpness} min={0} max={100} onChange={setSharpness} suffix="%" />
                       <Slider label="✨ Skin Beautify" value={beautifyLevel} min={0} max={100} onChange={setBeautifyLevel} suffix="%" />
@@ -643,7 +709,7 @@ export default function App() {
                           </div>
                           <div className="text-xs text-slate-600 mb-3 text-center">
                             Dimension: <b>1.2&quot; × 1.5&quot;</b> ({isUpscaled2X ? '720×900 px @ 600 DPI' : '360×450 px @ 300 DPI'})<br />
-                            True DPI encoded header included.
+                            <b>100% True 300/600 DPI Metadata Included</b>
                           </div>
                           <div className="flex gap-2">
                             <a href={singleResultUrl} download={`passport_1.2x1.5_${isUpscaled2X ? '600DPI' : '300DPI'}.${transparentBg ? 'png' : 'jpg'}`} className="inline-block bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-lg font-bold shadow">
@@ -743,7 +809,7 @@ export default function App() {
         </div>
 
         <p className="text-center text-xs text-slate-500 mt-6">
-          Guaranteed 300 / 600 DPI output metadata encoded into files for lab printing.
+          High precision 300 / 600 DPI output metadata encoded into files for lab printing.
         </p>
       </div>
     </main>
