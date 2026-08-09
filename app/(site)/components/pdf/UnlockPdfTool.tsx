@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import BackButton from '../BackButton';
-import { formatFileSize } from '../../lib/utils';
+import { formatFileSize } from '@/lib/utils';
 
 interface UnlockPdfToolProps {
   pdfjs?: any;

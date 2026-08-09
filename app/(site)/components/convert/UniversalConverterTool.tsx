@@ -37,14 +37,14 @@ import TurndownService from 'turndown'
 import type * as XLSX from 'xlsx'
 
 // Components & Hooks Path Fix
-import FileDropZone from '@/app/components/FileDropZone'
-import ResultList from '@/app/components/ResultList'
-import { useConvert } from '@/app/hooks/useConvert'
+import FileDropZone from '@/app/(site)/components/FileDropZone'
+import ResultList from '@/app/(site)/components/ResultList'
+import { useConvert } from '@/hooks/useConvert'
 
 // Converters & Utilities Path Fix
-import { pptxToText, pptxExtractMedia } from '@/app/lib/converters/pptxConverter'
-import { plainTextToPdf, textToEpub, textToDocx, textToPptx, textToRtf } from '@/app/lib/converters/ooxml'
-import { textToHtmlPage, textToMarkdown, textToXml, textToXlsx } from '@/app/lib/converters/textFormats'
+import { pptxToText, pptxExtractMedia } from '@/lib/converters/pptxConverter'
+import { plainTextToPdf, textToEpub, textToDocx, textToPptx, textToRtf } from '@/lib/converters/ooxml'
+import { textToHtmlPage, textToMarkdown, textToXml, textToXlsx } from '@/lib/converters/textFormats'
 import {
   createZip,
   extractZip,
@@ -56,25 +56,25 @@ import {
   listTar,
   listTarGz,
   zipTree,
-} from '@/app/lib/converters/archiveConverter'
+} from '@/lib/converters/archiveConverter'
 import {
   decodeAudio,
   audioBufferToWav,
   audioBufferToMp3,
   trimAudioBuffer,
   mergeAudioBuffers,
-} from '@/app/lib/converters/audioConverter'
-import { imageOcr, scanQrCode, extractPalette } from '@/app/lib/converters/bonusTools'
-import type { PaletteColor } from '@/app/lib/converters/bonusTools'
-import { openPdf, ocrPdf, pdfToZip, extractPdfText, renderPageBlob, pdfPageToSvg } from '@/app/lib/converters/pdfConverter'
+} from '@/lib/converters/audioConverter'
+import { imageOcr, scanQrCode, extractPalette } from '@/lib/converters/bonusTools'
+import type { PaletteColor } from '@/lib/converters/bonusTools'
+import { openPdf, ocrPdf, pdfToZip, extractPdfText, renderPageBlob, pdfPageToSvg } from '@/lib/converters/pdfConverter'
 import {
   videoToGif,
   videoToFramesZip,
   videoThumbnail,
   videoToAudioWav,
   videoToAudioMp3,
-} from '@/app/lib/converters/videoConverter'
-import { docxToRawText, docxToHtml, docxToPdf, docxToImage } from '@/app/lib/converters/wordConverter'
+} from '@/lib/converters/videoConverter'
+import { docxToRawText, docxToHtml, docxToPdf, docxToImage } from '@/lib/converters/wordConverter'
 import {
   readWorkbook,
   workbookToPdf,
@@ -85,8 +85,8 @@ import {
   workbookToHtml,
   workbookToXml,
   workbookToXlsx,
-} from '@/app/lib/converters/excelConverter'
-import { csvToJson, csvToXml, csvToHtml, csvToMarkdown, csvToTxt, csvToXlsx, csvToPdf } from '@/app/lib/converters/csvConverter'
+} from '@/lib/converters/excelConverter'
+import { csvToJson, csvToXml, csvToHtml, csvToMarkdown, csvToTxt, csvToXlsx, csvToPdf } from '@/lib/converters/csvConverter'
 import {
   jsonToXml,
   xmlToJson,
@@ -96,8 +96,8 @@ import {
   xmlToCsv,
   htmlToMarkdown,
   markdownToHtml,
-} from '@/app/lib/converters/dataConverter'
-import { epubToText, epubToHtml, epubToMarkdown, epubToDocx, epubToPdf } from '@/app/lib/converters/ebookConverter'
+} from '@/lib/converters/dataConverter'
+import { epubToText, epubToHtml, epubToMarkdown, epubToDocx, epubToPdf } from '@/lib/converters/ebookConverter'
 import {
   imageToRaster,
   encodeBmp,
@@ -106,8 +106,8 @@ import {
   imageToPdf,
   imageToSvg,
   loadImageFromFile,
-} from '@/app/lib/converters/imageConverter'
-import { stripExt, formatBytes, fileToText, downloadBlob } from '@/app/lib/utils'
+} from '@/lib/converters/imageConverter'
+import { stripExt, formatBytes, fileToText, downloadBlob } from '@/lib/utils'
 
 type TabType = 'pptx' | 'word' | 'excel' | 'pdf' | 'video' | 'audio' | 'image' | 'archive' | 'csv' | 'data' | 'ebook' | 'bonus'
 

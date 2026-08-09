@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { Sun, Moon, Calendar, Clock, Heart } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 
@@ -144,6 +145,15 @@ export default function Home() {
             >
               Dashboard
             </button>
+
+            {/* Direct Admin Zone Link Button */}
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all shadow-xs"
+            >
+              <span>Admin Zone</span>
+              <span></span>
+            </Link>
 
             {/* Theme Toggle Switch */}
             <button

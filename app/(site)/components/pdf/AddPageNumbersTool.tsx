@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import BackButton from '../BackButton';
-import { colorMap } from '../../lib/colorMap';
+import { colorMap } from '@/lib/colorMap';
 
 export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
   const [pageNumFile, setPageNumFile] = useState<File | null>(null);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ResultFile, ProgressState } from '../components/ResultList'
+import type { ResultFile, ProgressState } from '@/app/(site)/components/ResultList'
 
 export function useConvert() {
   const [files, setFiles] = useState<File[]>([])

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 import BackButton from '../BackButton';
-import { colorMap, commonWatermarks } from '../../lib/colorMap';
+import { colorMap, commonWatermarks } from '@/lib/colorMap';
 
 export default function WatermarkTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
   const [watermarkFile, setWatermarkFile] = useState<File | null>(null);

@@ -1,5 +1,5 @@
 import { Download, Loader2, AlertTriangle } from 'lucide-react'
-import { downloadBlob, formatBytes } from '../lib/utils'
+import { downloadBlob, formatBytes } from '@/lib/utils'
 
 export interface ResultFile {
   filename: string

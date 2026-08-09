@@ -23,7 +23,7 @@ import { marked } from 'marked';
 import TurndownService from 'turndown';
 import jsQR from 'jsqr';
 import BackButton from '../BackButton';
-import { formatFileSize } from '../../lib/utils';
+import { formatFileSize } from '@/lib/utils';
 
 interface UniversalConverterProps {
   pdfjs?: any;

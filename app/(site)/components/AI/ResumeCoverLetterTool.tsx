@@ -84,9 +84,9 @@ const PAGE_PAD = 46;
 const CONTENT_H = A4_H - PAGE_PAD * 2;
 
 type Mode = 'resume' | 'cover';
-type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' | 'executive' | 'canva_sidebar' | 'canva_header' | 'canva_minimal';
+type TemplateKey = 'modern' | 'classic' | 'corporate' | 'creative' | 'minimal' | 'executive' | 'canva_sidebar' | 'canva_header' | 'canva_minimal' | 'canva_2col' | 'gemini_split';
 type ColorKey = 'blue' | 'red' | 'black' | 'purple' | 'green' | 'orange' | 'dark' | 'teal' | 'coral';
-type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather';
+type FontKey = 'inter' | 'poppins' | 'roboto' | 'opensans' | 'lato' | 'merriweather' | 'montserrat' | 'raleway' | 'cinzel';
 type PhotoShape = 'circle' | 'rounded' | 'square';
 type Tone = 'formal' | 'modern' | 'confident';
 
@@ -192,71 +192,71 @@ const EMPTY_DATA: ResumeData = {
 
 const SAMPLE_DATA: ResumeData = {
   personal: {
-    name: 'Sullab Sinhamahapatra',
-    title: 'Development Professional & IT Specialist',
-    photo: '',
+    name: 'Alex Morgan',
+    title: 'Senior Software Engineer & Tech Lead',
+    photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
     photoShape: 'circle',
-    phone: '+91 96413 46222',
-    email: 'sullabsinha@gmail.com',
-    linkedin: 'linkedin.com/in/sullab-sinha',
-    portfolio: 'sullabsinha.dev',
-    github: 'github.com/sullab',
-    address: 'New Delhi, India',
+    phone: '+1 (555) 019-2834',
+    email: 'alex.morgan@example.com',
+    linkedin: 'linkedin.com/in/alexmorgan-demo',
+    portfolio: 'alexmorgan.dev',
+    github: 'github.com/alexmorgan-dev',
+    address: 'New York, NY, USA',
     summary:
-      'Development professional with extensive experience designing and delivering community training programs, managing donor-funded projects, and building capacity of grassroots organizations in education and IT sectors.',
+      'Results-driven Senior Software Engineer with over 6 years of experience designing scalable microservices, leading cross-functional engineering teams, and managing high-availability cloud infrastructure.',
   },
   experience: [
     {
-      company: 'NIIT Foundation',
-      designation: 'Cluster Coordinator / IT Trainer',
-      start: 'Jan 2021',
+      company: 'Tech Solutions Inc.',
+      designation: 'Senior Frontend Developer',
+      start: 'Jan 2022',
       end: 'Present',
       points: [
-        'Managed HP Alfa Digitalization project across multiple districts, expanding reach to 2,500+ students.',
-        'Delivered interactive IT & Cybersecurity workshops for grassroots community centers.',
-        'Coordinated with international donors and regional NGOs to monitor educational outcomes.',
+        'Architected a micro-frontend framework serving 2M+ active daily users, reducing initial load time by 38%.',
+        'Led a team of 8 full-stack engineers in delivering cloud-native web application features.',
+        'Implemented rigorous CI/CD test automation pipelines that improved software release velocity by 45%.',
       ],
     },
     {
-      company: 'Indus School & Community Project',
-      designation: 'Project Officer',
-      start: 'Jun 2018',
-      end: 'Dec 2020',
+      company: 'Global Software Labs',
+      designation: 'Full Stack Engineer',
+      start: 'Jun 2019',
+      end: 'Dec 2021',
       points: [
-        'Conducted community needs assessments reaching 2,000+ households in rural areas.',
-        'Coordinated livelihood workshops that helped 300+ women start income-generating activities.',
-        'Prepared quarterly impact reports reviewed by national and regional stakeholders.',
+        'Developed RESTful APIs and distributed backend services using Node.js, Python, and PostgreSQL.',
+        'Optimized database queries and introduced Redis caching layers, cutting API response times in half.',
+        'Collaborated closely with product managers and UX teams to build accessible, responsive user interfaces.',
       ],
     },
   ],
   education: [
-    { school: 'The University of Burdwan', degree: 'Master of Arts (MA in History)', years: '2016 – 2018', cgpa: '1st Class' },
-    { school: 'Khatra Adibasi Mahavidyalaya', degree: 'Bachelor of Arts (BA Hons)', years: '2013 – 2016', cgpa: '1st Class' },
+    { school: 'State University of Technology', degree: 'Master of Science in Computer Science', years: '2017 – 2019', cgpa: '3.9 / 4.0' },
+    { school: 'City Institute of Science', degree: 'Bachelor of Science in Software Engineering', years: '2013 – 2017', cgpa: '1st Class Honors' },
   ],
-  skills: ['Training Design', 'Needs Assessment', 'Project Management', 'Monitoring & Evaluation', 'Grant Reporting', 'MS Office', 'Facilitation', 'Stakeholder Engagement'],
-  languages: ['Bengali', 'English', 'Hindi'],
-  certifications: ['Diploma in Computer Application (DCA)', 'Google Digital Marketing Certificate', 'Domestic Data Entry Operator - Skill India', 'CISCO Cyber Suraksha'],
+  skills: ['TypeScript', 'React.js', 'Next.js', 'Node.js', 'Python', 'GraphQL', 'Docker', 'AWS Cloud', 'CI/CD Pipelines', 'Tailwind CSS'],
+  languages: ['English (Native)', 'Spanish (Professional)', 'French (Basic)'],
+  certifications: ['AWS Certified Solutions Architect', 'Google Cloud Professional Developer', 'Meta Frontend Developer Certificate'],
   projects: [
     {
-      name: 'HP ALFA School Digitalization',
-      description: 'Led a pilot delivering basic digital skills to rural students and educators; 92% reported improved classroom engagement.',
-      tech: 'Curriculum design, community mobilization, partner coordination',
-      link: '',
+      name: 'Cloud Infrastructure Analytics Dashboard',
+      description: 'Engineered a real-time cluster monitoring tool providing immediate visualization of CPU, RAM, and bandwidth metrics.',
+      tech: 'React, Node.js, WebSockets, Chart.js',
+      link: 'github.com/alexmorgan-dev/cloud-dash',
     },
   ],
-  achievements: ['Awarded "Best Trainer 2023"', 'Invited speaker at the National NGO Capacity-Building Summit'],
-  hobbies: ['Volunteering', 'Reading', 'Photography'],
+  achievements: ['Awarded "Engineer of the Year 2023"', 'Keynote Speaker at National Web Development Summit 2022'],
+  hobbies: ['Photography', 'Open Source Contributing', 'Marathon Running'],
   customSections: [
     {
       id: 'volunteering-1',
-      title: 'Volunteering & Social Work',
+      title: 'Community Leadership',
       type: 'cards',
       items: [
         {
-          heading: 'Youth Digital Empowerment Drive',
-          subheading: 'Lead Volunteer',
-          date: '2022 - 2023',
-          description: 'Organized free computer literacy camps for underprivileged youth in rural districts.',
+          heading: 'Youth Code Mentorship Program',
+          subheading: 'Lead Volunteer Mentor',
+          date: '2021 - Present',
+          description: 'Conducting weekly coding bootcamps for underprivileged high school students interested in STEM careers.',
         },
       ],
     },
@@ -286,6 +286,9 @@ const FONTS: Record<FontKey, { label: string; family: string }> = {
   opensans: { label: 'Open Sans', family: "'Open Sans', sans-serif" },
   lato: { label: 'Lato', family: "'Lato', sans-serif" },
   merriweather: { label: 'Merriweather', family: "'Merriweather', serif" },
+  montserrat: { label: 'Montserrat', family: "'Montserrat', sans-serif" },
+  raleway: { label: 'Raleway', family: "'Raleway', sans-serif" },
+  cinzel: { label: 'Cinzel', family: "'Cinzel', serif" },
 };
 
 const TEMPLATES: Record<TemplateKey, { label: string; header: 'center' | 'left' | 'split' | 'band' | 'sidebar'; section: 'bar' | 'caps' | 'underline' | 'rule' | 'leftline' | 'centerline'; photo: boolean }> = {
@@ -298,6 +301,8 @@ const TEMPLATES: Record<TemplateKey, { label: string; header: 'center' | 'left' 
   canva_sidebar: { label: 'Canva Sidebar', header: 'sidebar', section: 'bar', photo: true },
   canva_header: { label: 'Canva Banner', header: 'band', section: 'underline', photo: true },
   canva_minimal: { label: 'Canva Minimal', header: 'left', section: 'bar', photo: true },
+  canva_2col: { label: 'Canva 2-Column', header: 'sidebar', section: 'bar', photo: true },
+  gemini_split: { label: 'Gemini Split', header: 'split', section: 'leftline', photo: true },
 };
 
 const TONE_LABELS: Record<Tone, string> = {
@@ -490,9 +495,9 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
 
   const loadSample = () => {
     setData(SAMPLE_DATA);
-    setCover((c) => ({ ...c, jobTitle: 'Development Professional / IT Trainer', company: 'NIIT Foundation', tone: 'formal' }));
+    setCover((c) => ({ ...c, jobTitle: 'Senior Software Engineer', company: 'Tech Solutions Inc.', tone: 'formal' }));
     setMode('resume');
-    showToast('Sample data loaded with +91 New Delhi contact');
+    showToast('Sample data loaded with demo contact details');
   };
 
   const resetAll = () => {
@@ -556,6 +561,9 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
           return (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: `3px solid ${C.primary}`, paddingBottom: 12, ...base }}>
               <div>
+                {tpl.photo && p.photo && (
+                  <img src={p.photo} alt="photo" style={{ width: 72, height: 72, objectFit: 'cover', border: `2px solid ${C.primary}`, marginBottom: 8, ...getPhotoStyle(p.photoShape) }} />
+                )}
                 <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: C.text }}>{name}</h1>
                 {titleText && <p style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 600, color: C.primary }}>{titleText}</p>}
               </div>
@@ -1086,7 +1094,7 @@ ${current}`;
               className="rcb-preview-page"
               style={{
                 position: 'absolute',
-                top: 0,
+                top: pi * (A4_H * previewScale + 24),
                 left: 0,
                 width: A4_W,
                 height: A4_H,
@@ -1405,23 +1413,23 @@ ${current}`;
               <FormSection id="personal" icon={<User size={15} />} title="Personal">
                 <Row>
                   <Field label="Full Name">
-                    <input className={inputCls} value={data.personal.name} onChange={(e) => patchPersonal('name', e.target.value)} placeholder="Sullab Sinhamahapatra" />
+                    <input className={inputCls} value={data.personal.name} onChange={(e) => patchPersonal('name', e.target.value)} placeholder="Alex Morgan" />
                   </Field>
                   <Field label="Target Job Title">
-                    <input className={inputCls} value={data.personal.title} onChange={(e) => patchPersonal('title', e.target.value)} placeholder="Development Professional" />
+                    <input className={inputCls} value={data.personal.title} onChange={(e) => patchPersonal('title', e.target.value)} placeholder="Senior Software Engineer" />
                   </Field>
                 </Row>
                 <Field label="Photo & Shape">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {data.personal.photo ? (
-                      <img src={data.personal.photo} alt="avatar" style={{ width: 48, height: 48, objectFit: 'cover', ...getPhotoStyle(data.personal.photoShape) }} />
+                      <img src={data.personal.photo} alt="avatar preview" style={{ width: 52, height: 52, objectFit: 'cover', border: '2px solid #2563eb', ...getPhotoStyle(data.personal.photoShape) }} />
                     ) : (
-                      <span style={{ width: 48, height: 48, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
+                      <span style={{ width: 52, height: 52, borderRadius: 8, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
                         <Upload size={18} />
                       </span>
                     )}
                     <label className="rcb-tbtn" style={{ cursor: 'pointer' }}>
-                      <Upload size={14} /> Upload
+                      <Upload size={14} /> Upload Image
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => onPhotoUpload(e.target.files?.[0])} />
                     </label>
                     {data.personal.photo && (
@@ -1436,33 +1444,33 @@ ${current}`;
                         className={`rcb-chip-choice ${data.personal.photoShape === shape ? 'rcb-active' : ''}`}
                         onClick={() => patchPersonal('photoShape', shape)}
                       >
-                        {shape === 'circle' ? 'Gol (Circle)' : shape === 'rounded' ? 'Rounded' : 'Charkona (Square)'}
+                        {shape === 'circle' ? 'Circle' : shape === 'rounded' ? 'Rounded' : 'Square'}
                       </button>
                     ))}
                   </div>
                 </Field>
                 <Row>
-                  <Field label="Phone (+91)">
-                    <input className={inputCls} value={data.personal.phone} onChange={(e) => patchPersonal('phone', e.target.value)} placeholder="+91 96413 46222" />
+                  <Field label="Phone">
+                    <input className={inputCls} value={data.personal.phone} onChange={(e) => patchPersonal('phone', e.target.value)} placeholder="+1 (555) 019-2834" />
                   </Field>
                   <Field label="Email">
-                    <input className={inputCls} value={data.personal.email} onChange={(e) => patchPersonal('email', e.target.value)} placeholder="sullabsinha@gmail.com" />
+                    <input className={inputCls} value={data.personal.email} onChange={(e) => patchPersonal('email', e.target.value)} placeholder="alex.morgan@example.com" />
                   </Field>
                 </Row>
                 <Row>
                   <Field label="LinkedIn">
-                    <input className={inputCls} value={data.personal.linkedin} onChange={(e) => patchPersonal('linkedin', e.target.value)} placeholder="linkedin.com/in/you" />
+                    <input className={inputCls} value={data.personal.linkedin} onChange={(e) => patchPersonal('linkedin', e.target.value)} placeholder="linkedin.com/in/alexmorgan" />
                   </Field>
                   <Field label="Portfolio">
-                    <input className={inputCls} value={data.personal.portfolio} onChange={(e) => patchPersonal('portfolio', e.target.value)} placeholder="yoursite.dev" />
+                    <input className={inputCls} value={data.personal.portfolio} onChange={(e) => patchPersonal('portfolio', e.target.value)} placeholder="alexmorgan.dev" />
                   </Field>
                 </Row>
                 <Row>
                   <Field label="GitHub">
-                    <input className={inputCls} value={data.personal.github} onChange={(e) => patchPersonal('github', e.target.value)} placeholder="github.com/you" />
+                    <input className={inputCls} value={data.personal.github} onChange={(e) => patchPersonal('github', e.target.value)} placeholder="github.com/alexmorgan" />
                   </Field>
                   <Field label="Address / Location">
-                    <input className={inputCls} value={data.personal.address} onChange={(e) => patchPersonal('address', e.target.value)} placeholder="New Delhi, India" />
+                    <input className={inputCls} value={data.personal.address} onChange={(e) => patchPersonal('address', e.target.value)} placeholder="New York, NY, USA" />
                   </Field>
                 </Row>
                 <Field label="Professional Summary">
@@ -1529,7 +1537,7 @@ ${current}`;
                       </button>
                     </div>
                     <Field label="School / University">
-                      <input className={inputCls} value={item.school} onChange={(e) => updateEducation(i, 'school', e.target.value)} placeholder="University of Dhaka" />
+                      <input className={inputCls} value={item.school} onChange={(e) => updateEducation(i, 'school', e.target.value)} placeholder="State University" />
                     </Field>
                     <Field label="Degree">
                       <input className={inputCls} value={item.degree} onChange={(e) => updateEducation(i, 'degree', e.target.value)} placeholder="BSc in Computer Science" />
@@ -1539,7 +1547,7 @@ ${current}`;
                         <input className={inputCls} value={item.years} onChange={(e) => updateEducation(i, 'years', e.target.value)} placeholder="2018 – 2022" />
                       </Field>
                       <Field label="CGPA / Grade">
-                        <input className={inputCls} value={item.cgpa} onChange={(e) => updateEducation(i, 'cgpa', e.target.value)} placeholder="CGPA 3.80" />
+                        <input className={inputCls} value={item.cgpa} onChange={(e) => updateEducation(i, 'cgpa', e.target.value)} placeholder="3.80 / 4.0" />
                       </Field>
                     </Row>
                   </div>
@@ -1561,7 +1569,7 @@ ${current}`;
               </FormSection>
 
               <FormSection id="languages" icon={<Languages size={15} />} title="Languages">
-                <ChipInput tags={data.languages} onChange={(v) => setTags('languages', v)} placeholder="Bengali, English..." />
+                <ChipInput tags={data.languages} onChange={(v) => setTags('languages', v)} placeholder="English, Spanish..." />
               </FormSection>
 
               <FormSection id="certifications" icon={<Award size={15} />} title="Certifications">
@@ -1684,7 +1692,7 @@ ${current}`;
               <FormSection id="cv-details" icon={<PenLine size={15} />} title="Cover Letter Details">
                 <Row>
                   <Field label="Job Title">
-                    <input className={inputCls} value={cover.jobTitle} onChange={(e) => setCover((c) => ({ ...c, jobTitle: e.target.value }))} placeholder="NGO Executive / Trainer" />
+                    <input className={inputCls} value={cover.jobTitle} onChange={(e) => setCover((c) => ({ ...c, jobTitle: e.target.value }))} placeholder="Senior Software Engineer" />
                   </Field>
                   <Field label="Company">
                     <input className={inputCls} value={cover.company} onChange={(e) => setCover((c) => ({ ...c, company: e.target.value }))} placeholder="Target company" />

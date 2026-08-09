@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import BackButton from '../BackButton';
-import { formatFileSize } from '../../lib/utils';
+import { formatFileSize } from '@/lib/utils';
 
 export default function ProtectPdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
   const [protectFile, setProtectFile] = useState<File | null>(null);
