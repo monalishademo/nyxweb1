@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Terminal, ArrowRight, Shield, LogOut } from 'lucide-react';
+import { Plus, Shield, LogOut } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -35,27 +35,20 @@ export default function AdminDashboardPage() {
 
       {/* Tools Section Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* OSINT Card */}
-        <Link
-          href="/tools/osint"
-          className="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 p-6 rounded-2xl transition group flex flex-col justify-between space-y-4 hover:shadow-2xl hover:shadow-emerald-500/10"
-        >
-          <div className="flex items-center justify-between">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-              <Terminal className="w-6 h-6" />
-            </div>
-            <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition" />
+        {/* Add Tool Card */}
+        <div className="bg-slate-900/50 border border-dashed border-slate-800 hover:border-emerald-500/50 p-6 rounded-2xl transition group flex flex-col items-center justify-center space-y-3 cursor-pointer min-h-[160px] hover:bg-slate-900/80">
+          <div className="p-3 bg-slate-800 text-slate-400 group-hover:bg-emerald-500/10 group-hover:text-emerald-400 rounded-xl transition">
+            <Plus className="w-6 h-6" />
           </div>
-
-          <div>
-            <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition">
-              OSINT Console
+          <div className="text-center">
+            <h3 className="text-sm font-bold text-slate-300 group-hover:text-white transition">
+              Add Tool
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              Run Maigret, SOCMINT & Recon tools.
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Integrate new utility module
             </p>
           </div>
-        </Link>
+        </div>
       </div>
     </div>
   );
