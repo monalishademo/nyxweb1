@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Sun, Moon, Calendar, Clock, Heart } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 
-// --- Dynamic Imports (SSR False to prevent DOMMatrix/Canvas Errors) ---
+// --- Dynamic Imports (SSR False to prevent DOMMatrix/Canvas/XLSX Errors) ---
 const UniversalConverterTool = dynamic<any>(() => import('./components/convert/UniversalConverterTool'), { ssr: false });
 const ChatWithPdfTool = dynamic<any>(() => import('./components/AI/ChatWithPdfTool'), { ssr: false });
 const NotesPdfSummarizerTool = dynamic<any>(() => import('./components/AI/NotesPdfSummarizerTool'), { ssr: false });
@@ -19,6 +19,9 @@ const ProtectPdfTool = dynamic<any>(() => import('./components/pdf/ProtectPdfToo
 const UnlockPdfTool = dynamic<any>(() => import('./components/pdf/UnlockPdfTool'), { ssr: false });
 const CompressPdfTool = dynamic<any>(() => import('./components/pdf/CompressPdfTool'), { ssr: false });
 const ImageToTextOcrTool = dynamic<any>(() => import('./components/AI/ImageToTextOcrTool'), { ssr: false });
+
+// --- Excel Tool Dynamic Import (ক্লিপবোর্ড ও ব্রাউজার রানটাইম নিরাপদ রাখতে) ---
+const AbcPulseBatchCreateTool = dynamic<any>(() => import('./components/excel/AbcPulseBatchCreateTool'), { ssr: false });
 
 // --- Regular AI Tools Imports ---
 import AiImageGeneratorTool from './components/AI/AiImageGeneratorTool';
@@ -152,7 +155,6 @@ export default function Home() {
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 transition-all shadow-xs"
             >
               <span>Admin Zone</span>
-              <span></span>
             </Link>
 
             {/* Theme Toggle Switch */}
@@ -282,6 +284,11 @@ export default function Home() {
           {selectedTool === 'age-calculator' && (
             <AgeCalculatorTool onBack={handleBackToDashboard} />
           )}
+
+          {/* 7. Excel Tools (Dynamic Client-side Rendering) */}
+          {selectedTool === 'abc-pulse-batch-create' && (
+            <AbcPulseBatchCreateTool onBack={handleBackToDashboard} />
+          )}
         </main>
       </div>
 
@@ -291,7 +298,7 @@ export default function Home() {
           <div>
             © {new Date().getFullYear()}{' '}
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              NYX 
+              NYX
             </span>{' '}
             — All rights reserved.
           </div>

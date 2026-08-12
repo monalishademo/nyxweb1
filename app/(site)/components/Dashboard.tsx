@@ -33,7 +33,8 @@ import {
   CheckCircle2,
   AlignLeft,
   Share2,
-  FileUser
+  FileUser,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -99,6 +100,15 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
       ],
     },
     {
+      title: 'Excel Tools',
+      description: 'Process, validate, and format Excel data sheets for Pulse Portal.',
+      badge: 'Excel',
+      color: 'from-emerald-600 to-green-600',
+      tools: [
+        { id: 'abc-pulse-batch-create', name: 'Abc Pulse Batch Create', icon: FileSpreadsheet },
+      ],
+    },
+    {
       title: 'Utility Tools',
       description: 'Everyday essential tools for rapid productivity.',
       badge: 'Utility',
@@ -140,7 +150,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
             <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search tools (e.g. AI Image, Passport, Compress)..."
+              placeholder="Search tools (e.g. AI Image, Passport, Excel)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 rounded-xl dark-input border placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all text-sm"
@@ -150,7 +160,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
       </div>
 
       {/* Grid Cards Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2 sm:px-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 px-2 sm:px-0">
         {categories.map((cat, idx) => {
           const filteredTools = cat.tools.filter((t) =>
             t.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -201,7 +211,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
               </div>
 
               <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs dark-text-muted font-medium">
-                <span>{filteredTools.length} Tools</span>
+                <span>{filteredTools.length} {filteredTools.length === 1 ? 'Tool' : 'Tools'}</span>
                 <span className="text-blue-600 dark:text-blue-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
                   Explore →
                 </span>
