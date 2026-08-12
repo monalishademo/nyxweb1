@@ -291,7 +291,7 @@ export default function Home() {
           <div>
             © {new Date().getFullYear()}{' '}
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              NYX ALL IN ONE
+              NYX 
             </span>{' '}
             — All rights reserved.
           </div>
