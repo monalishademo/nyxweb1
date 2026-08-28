@@ -70,7 +70,7 @@ export default function LoginPage(): React.ReactElement {
         <div className="flex-1 w-full max-w-md bg-[#0b0f19] border border-slate-800/80 p-8 rounded-2xl shadow-2xl my-4">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-white tracking-wide">
-              NYX WEB ADMIN LOGIN
+              NYX WEB ONE ADMIN LOGIN
             </h2>
             <p className="text-xs text-emerald-400 mt-1 font-medium">
               Hi Admin, please enter your details

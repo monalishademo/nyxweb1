@@ -1,24 +1,16 @@
 'use client';
 
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function BackButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      style={{
-        padding: '8px 16px',
-        borderRadius: '6px',
-        border: 'none',
-        background: '#0f172a',
-        color: '#ffffff',
-        cursor: 'pointer',
-        marginBottom: '20px',
-        fontWeight: '600',
-        fontSize: '14px',
-      }}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold tracking-wide transition shadow-sm cursor-pointer mb-5"
     >
-      ← Back to Dashboard
+      <ArrowLeft className="w-4 h-4" />
+      <span>Back to Dashboard</span>
     </button>
   );
 }

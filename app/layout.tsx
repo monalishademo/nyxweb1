@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NYX ALL IN ONE",
+  title: "NYX WEB ONE",
   description:
-    "All-in-one web utility hub for PDF tools, image processing, unit conversion, and everyday productivity tools.",
+    "Fast, secure, and privacy-focused web utility suite for AI tools, PDF processing, image editing, conversion, and daily productivity.",
 };
 
 export default function RootLayout({

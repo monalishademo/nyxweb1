@@ -1,50 +1,55 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Mail, Copy, Check, RefreshCw, Wand2 } from 'lucide-react';
+import { 
+  Mail, 
+  Send, 
+  Copy, 
+  Check, 
+  ArrowLeft, 
+  Sparkles, 
+  RefreshCw, 
+  SlidersHorizontal,
+  Bot
+} from 'lucide-react';
 
 interface AiEmailWriterProps {
   onBack?: () => void;
 }
 
 export default function AiEmailWriterTool({ onBack }: AiEmailWriterProps) {
-  const [prompt, setPrompt] = useState('');
+  const [description, setDescription] = useState('');
   const [recipient, setRecipient] = useState('');
   const [tone, setTone] = useState('Professional');
-  const [generatedEmail, setGeneratedEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generatedEmail, setGeneratedEmail] = useState('');
   const [copied, setCopied] = useState(false);
 
   const tones = ['Professional', 'Casual', 'Urgent', 'Polite', 'Persuasive'];
 
-  const handleGenerateEmail = async () => {
-    if (!prompt.trim()) return;
+  const handleGenerate = async () => {
+    if (!description.trim() || loading) return;
 
     setLoading(true);
     setGeneratedEmail('');
 
-    const fullPrompt = `Write a ${tone.toLowerCase()} email based on this requirement: "${prompt}". Recipient: ${recipient || 'Concerned Person'}. Include a clear Subject Line at the top.`;
-
     try {
-      const response = await fetch('/api/gemini', {
+      const res = await fetch('/api/ai-email-writer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: fullPrompt }),
+        body: JSON.stringify({
+          prompt: description,
+          recipient: recipient.trim() || 'Colleague / Client',
+          tone,
+        }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate email');
 
-      // Groq Back-end output check (data.text)
-      if (data?.text) {
-        setGeneratedEmail(data.text);
-      } else if (data?.error) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert('Failed to generate email. Please check your API setup.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error connecting to AI service.');
+      setGeneratedEmail(data.email || data.result || '');
+    } catch (err: any) {
+      alert(err.message || 'Error communicating with NYX Mind server.');
     } finally {
       setLoading(false);
     }
@@ -58,114 +63,177 @@ export default function AiEmailWriterTool({ onBack }: AiEmailWriterProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>AI Email Generator</span>
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+      {/* Top Header (Matching NYX Image Generator style) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                NYX Email Writer
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 font-bold tracking-wider">
+                AI
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Powered by NYX Mind
+            </p>
+          </div>
         </div>
-        <h2 className="text-3xl font-bold dark-text-main">AI Email Writer</h2>
-        <p className="dark-text-muted text-sm max-w-lg mx-auto">
-          Draft polished professional emails instantly powered by AI.
-        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="dark-card border rounded-2xl p-6 shadow-md space-y-4">
-          <h3 className="text-lg font-bold dark-text-main flex items-center gap-2">
-            <Mail className="w-5 h-5 text-blue-500" />
-            <span>Email Details</span>
-          </h3>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main">What should the email be about? *</label>
-            <textarea
-              rows={3}
-              placeholder="e.g. Requesting a leave for 2 days due to personal work..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main">Recipient (Optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Manager / HR / Client"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl dark-input border text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold dark-text-main">Select Tone</label>
-            <div className="flex flex-wrap gap-2">
-              {tones.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTone(t)}
-                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all cursor-pointer ${
-                    tone === t
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                      : 'dark-btn hover:border-blue-400'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column Controls */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5">
+            
+            {/* Context Input */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <Mail className="w-3.5 h-3.5 text-indigo-500" />
+                What should the email be about? *
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Describe what you want NYX Mind to compose..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none transition-all placeholder:text-slate-400"
+              />
             </div>
-          </div>
 
-          <button
-            onClick={handleGenerateEmail}
-            disabled={loading || !prompt.trim()}
-            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>AI is writing...</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4" />
-                <span>Generate Email</span>
-              </>
-            )}
-          </button>
+            {/* Recipient */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <Bot className="w-3.5 h-3.5 text-indigo-500" />
+                Recipient (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Manager / HR / Client"
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                disabled={loading}
+                className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Tone Selection */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                Select Tone
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {tones.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTone(t)}
+                    className={`text-xs px-3 py-2 rounded-xl font-medium border transition-all cursor-pointer truncate ${
+                      tone === t
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/30'
+                        : 'bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <button
+              onClick={handleGenerate}
+              disabled={loading || !description.trim()}
+              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:opacity-95 disabled:opacity-50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Synthesizing Draft...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate with NYX Mind</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="dark-card border rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between border-b pb-3 mb-4 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold dark-text-main">Generated Email</h3>
-              {generatedEmail && (
-                <button
-                  onClick={handleCopy}
-                  className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-blue-500 hover:text-white text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Copied!' : 'Copy Email'}</span>
-                </button>
-              )}
-            </div>
-
+        {/* Right Column Output */}
+        <div className="lg:col-span-7">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm min-h-[500px] flex flex-col justify-between relative overflow-hidden">
             {loading ? (
-              <div className="text-center py-20 space-y-3">
-                <RefreshCw className="w-8 h-8 text-blue-500 animate-spin mx-auto" />
-                <p className="text-sm dark-text-muted font-medium">Writing your email...</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 py-16">
+                <div className="relative inline-flex">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 animate-spin blur-md opacity-70"></div>
+                  <div className="relative p-4 rounded-full bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-base font-bold text-slate-800 dark:text-slate-100">
+                    NYX Mind is drafting your email
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Applying {tone.toLowerCase()} syntax and formatting passes...
+                  </p>
+                </div>
               </div>
             ) : generatedEmail ? (
-              <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 whitespace-pre-wrap dark-text-main text-xs sm:text-sm leading-relaxed font-sans">
-                {generatedEmail}
+              <div className="space-y-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Generated Result
+                    </span>
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 cursor-pointer transition-colors"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? 'Copied' : 'Copy Email'}
+                    </button>
+                  </div>
+                  <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    {generatedEmail}
+                  </div>
+                </div>
+                <button
+                  onClick={handleCopy}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.01] mt-4"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>{copied ? 'Copied to Clipboard!' : 'Copy to Clipboard'}</span>
+                </button>
               </div>
             ) : (
-              <div className="text-center py-20 dark-text-muted space-y-2">
-                <Mail className="w-12 h-12 mx-auto opacity-20" />
-                <p className="text-sm">Your AI generated email draft will appear here.</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3 py-16 text-slate-400">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 inline-block border border-slate-100 dark:border-slate-800">
+                  <Mail className="w-10 h-10 opacity-40 mx-auto" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                    Your Canvas is Empty
+                  </p>
+                  <p className="text-xs max-w-xs mx-auto">
+                    Type details on the left panel to compose a structured email with NYX Mind.
+                  </p>
+                </div>
               </div>
             )}
           </div>
