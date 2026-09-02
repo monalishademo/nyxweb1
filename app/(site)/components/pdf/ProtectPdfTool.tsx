@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
-import BackButton from '../BackButton';
 import { formatFileSize } from '@/lib/utils';
 
 export default function ProtectPdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
@@ -52,7 +51,7 @@ export default function ProtectPdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: 
 
     try {
       if (!pdfjs) {
-        alert("PDF Engine প্রস্তুত হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
+        alert("PDF Engine প্রস্তুত হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড পর আবার চেষ্টা করুন।");
         setIsProtecting(false);
         return;
       }
@@ -75,13 +74,10 @@ export default function ProtectPdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: 
         canvas.width = viewport.width;
 
         if (context) {
-          // High quality image smoothing
           context.imageSmoothingEnabled = true;
           context.imageSmoothingQuality = 'high';
 
           await page.render({ canvasContext: context, viewport }).promise;
-          
-          // Max JPEG quality (1.0)
           const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
           const origViewport = page.getViewport({ scale: 1.0 });
@@ -124,122 +120,185 @@ export default function ProtectPdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: 
       setIsProtecting(false);
     } catch (err: any) {
       console.error('Protection error:', err);
-      alert('PDF Encrypt করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।');
+      alert('PDF Encrypt করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।');
       setIsProtecting(false);
     }
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-      <BackButton onClick={onBack} />
+    <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-2xl shadow-sm border border-slate-100">
+      {/* Header Section */}
+      <div className="flex items-center gap-3.5 mb-8">
+        <button
+          onClick={onBack}
+          type="button"
+          className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+          title="Back"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
 
-      <h2 style={{ margin: '15px 0 10px 0', color: '#0f172a' }}>🔒 Protect / Lock PDF File</h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>Encrypt your PDF file with high-resolution password protection.</p>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+              NYX PDF Protect
+            </h1>
+            <span className="px-2.5 py-0.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full">
+              PDF TOOL
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Encrypt your PDF file with high-resolution password protection.
+          </p>
+        </div>
+      </div>
 
+      {/* Upload Zone */}
       {!protectFile ? (
-        <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
+        <div className="relative border-2 border-dashed border-indigo-400/80 rounded-2xl p-12 bg-white flex flex-col items-center justify-center text-center transition-all hover:border-indigo-500">
           <input
             type="file"
             accept="application/pdf"
             onChange={handleProtectFileUpload}
             id="protect-pdf-input"
-            style={{ display: 'none' }}
+            className="hidden"
           />
+
+          <div className="w-12 h-12 mb-4 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-center text-indigo-500">
+            <svg className="w-6 h-6 stroke-[1.8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+
+          <h3 className="text-sm font-bold text-slate-800 mb-1">Upload PDF Document</h3>
+          <p className="text-xs text-slate-500 mb-6">Select a file to encrypt and set password protection.</p>
+
           <label
             htmlFor="protect-pdf-input"
-            style={{ backgroundColor: '#0070f3', color: 'white', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-block' }}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm cursor-pointer transition-colors flex items-center gap-2"
           >
-            📁 Choose PDF File to Lock
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Select PDF File
           </label>
         </div>
       ) : (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', marginBottom: '25px' }}>
+          {/* Main Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            {/* Password Configuration Panel */}
+            <div className="lg:col-span-7 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-xs font-semibold text-slate-700">Security Credentials</span>
+                <button
+                  onClick={() => setProtectFile(null)}
+                  className="text-xs text-rose-500 hover:underline font-medium cursor-pointer"
+                >
+                  Change File
+                </button>
+              </div>
 
-            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '25px' }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#0f172a' }}>🔑 Set Password:</h4>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Enter Password:</label>
-                <div style={{ position: 'relative' }}>
+              {/* Enter Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Enter Password</label>
+                <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={pdfPassword}
                     onChange={(e) => setPdfPassword(e.target.value)}
-                    placeholder="Type password..."
-                    style={{ width: '100%', padding: '10px 35px 10px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 'bold' }}
+                    placeholder="Enter strong password..."
+                    className="w-full py-2.5 pl-3 pr-10 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer text-xs"
                   >
                     {showPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Confirm Password:</label>
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Confirm Password</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPdfPassword}
                   onChange={(e) => setConfirmPdfPassword(e.target.value)}
                   placeholder="Re-type password..."
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 'bold' }}
+                  className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
+              {/* Password Match Status */}
               {pdfPassword && confirmPdfPassword && (
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: pdfPassword === confirmPdfPassword ? '#166534' : '#ef4444' }}>
+                <div
+                  className={`text-xs font-semibold px-3 py-2 rounded-lg border ${
+                    pdfPassword === confirmPdfPassword
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-200'
+                  }`}
+                >
                   {pdfPassword === confirmPdfPassword ? '✅ Passwords match!' : '❌ Passwords do not match'}
                 </div>
               )}
             </div>
 
-            <div style={{ backgroundColor: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Document Details & Cover Preview Card */}
+            <div className="lg:col-span-5 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
               {protectPreviewUrl ? (
-                <img src={protectPreviewUrl} alt="PDF Cover" style={{ width: '100px', height: '140px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 4px 10px rgba(0,0,0,0.08)' }} />
+                <div className="relative rounded-lg overflow-hidden border border-slate-200 shadow-md bg-white p-1">
+                  <img
+                    src={protectPreviewUrl}
+                    alt="PDF Cover"
+                    className="w-24 h-32 object-cover rounded"
+                  />
+                </div>
               ) : (
-                <div style={{ fontSize: '40px' }}>📄</div>
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl">
+                  📄
+                </div>
               )}
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginTop: '12px' }}>{protectFile.name}</div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Size: {formatFileSize(protectFile.size)}</div>
+              
+              <div className="mt-3">
+                <p className="text-xs font-bold text-slate-800 truncate max-w-[220px]">
+                  {protectFile.name}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Size: {formatFileSize(protectFile.size)}
+                </p>
+              </div>
             </div>
-
           </div>
 
+          {/* Action Button */}
           <button
             onClick={handleProtectPDF}
             disabled={isProtecting || !pdfPassword || pdfPassword !== confirmPdfPassword}
-            style={{
-              marginTop: '10px',
-              width: '100%',
-              padding: '14px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: (!pdfPassword || pdfPassword !== confirmPdfPassword) ? '#94a3b8' : '#8b5cf6',
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: (!pdfPassword || pdfPassword !== confirmPdfPassword) ? 'not-allowed' : 'pointer',
-            }}
+            className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isProtecting ? 'Encrypting High-Res PDF...' : '🔒 Encrypt & Download Locked PDF'}
           </button>
 
+          {/* Success Banner */}
           {protectedResult && (
-            <div style={{ marginTop: '20px', padding: '20px', borderRadius: '12px', backgroundColor: '#f0fdf4', border: '2px solid #22c55e', textAlign: 'center' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: '#15803d' }}>🎉 High Quality PDF Locked!</h3>
-              <p style={{ margin: '0 0 15px 0', color: '#166534', fontSize: '14px' }}>
+            <div className="mt-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center flex flex-col items-center gap-2">
+              <h3 className="text-xs font-bold text-emerald-800">
+                🎉 High Quality PDF Locked Successfully!
+              </h3>
+              <p className="text-xs text-emerald-600">
                 Your PDF is now encrypted with password protection without quality loss.
               </p>
               <a
                 href={protectedResult.downloadUrl}
                 download={protectedResult.filename}
-                style={{ display: 'inline-block', backgroundColor: '#22c55e', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none' }}
+                className="mt-1 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
               >
-                ⬇️ Download Locked PDF
+                ⬇️ Download Locked PDF Again
               </a>
             </div>
           )}

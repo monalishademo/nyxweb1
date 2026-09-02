@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import BackButton from '../BackButton';
 import { colorMap } from '@/lib/colorMap';
 
 export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
@@ -124,73 +123,127 @@ export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBa
     }
   };
 
-  const getPreviewPositionStyle = () => {
-    const style: React.CSSProperties = { position: 'absolute', padding: '6px' };
-    if (position.includes('top')) style.top = '10px';
-    else style.bottom = '10px';
+  const getPreviewPositionClasses = () => {
+    let classes = 'absolute px-2 py-1 select-none pointer-events-none transition-all duration-150 ';
+    if (position.includes('top')) classes += 'top-2 ';
+    else classes += 'bottom-2 ';
 
-    if (position.includes('left')) style.left = '10px';
-    else if (position.includes('right')) style.right = '10px';
-    else { style.left = '50%'; style.transform = 'translateX(-50%)'; }
+    if (position.includes('left')) classes += 'left-2 ';
+    else if (position.includes('right')) classes += 'right-2 ';
+    else classes += 'left-1/2 -translate-x-1/2 ';
 
-    return style;
+    return classes;
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-      <BackButton onClick={onBack} />
+    <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-2xl shadow-sm border border-slate-100">
+      {/* Header Section */}
+      <div className="flex items-center gap-3.5 mb-8">
+        <button
+          onClick={onBack}
+          type="button"
+          className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+          title="Back"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
 
-      <h2 style={{ margin: '0 0 10px 0', color: '#0f172a' }}>🔢 Add Page Numbers to PDF</h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>Customize numbering with custom text and expanded color options.</p>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+              NYX Page Numbering
+            </h1>
+            <span className="px-2.5 py-0.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full">
+              PDF TOOL
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Customize page numbers with live interactive positioning and formatting.
+          </p>
+        </div>
+      </div>
 
+      {/* Upload Zone */}
       {!pageNumFile ? (
-        <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
+        <div className="relative border-2 border-dashed border-indigo-400/80 rounded-2xl p-12 bg-white flex flex-col items-center justify-center text-center transition-all hover:border-indigo-500">
           <input
             type="file"
             accept="application/pdf"
             onChange={handlePageNumFileUpload}
             id="page-num-pdf-input"
-            style={{ display: 'none' }}
+            className="hidden"
           />
+
+          <div className="w-12 h-12 mb-4 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-center text-indigo-500">
+            <svg className="w-6 h-6 stroke-[1.8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+            </svg>
+          </div>
+
+          <h3 className="text-sm font-bold text-slate-800 mb-1">Upload PDF Document</h3>
+          <p className="text-xs text-slate-500 mb-6">Select a file to add custom header or footer page numbers.</p>
+
           <label
             htmlFor="page-num-pdf-input"
-            style={{ backgroundColor: '#0070f3', color: 'white', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-block' }}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm cursor-pointer transition-colors flex items-center gap-2"
           >
-            📁 Choose PDF File
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Select PDF File
           </label>
         </div>
       ) : (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', marginBottom: '25px' }}>
+          {/* Main Controls & Live Preview Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            {/* Left Column: Settings Panel */}
+            <div className="lg:col-span-7 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-xs font-semibold text-slate-700">Settings & Number Formatting</span>
+                <button
+                  onClick={() => setPageNumFile(null)}
+                  className="text-xs text-rose-500 hover:underline font-medium cursor-pointer"
+                >
+                  Change File
+                </button>
+              </div>
 
-            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#0f172a' }}>⚙️ Numbering Options:</h4>
-
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Numbering Type:</label>
-                <div style={{ display: 'flex', gap: '10px' }}>
+              {/* Numbering Mode Switcher */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Numbering Mode</label>
+                <div className="grid grid-cols-2 gap-2 bg-slate-200/60 p-1 rounded-xl">
                   <button
+                    type="button"
                     onClick={() => setFormatMode('standard')}
-                    style={{ flex: 1, padding: '8px', borderRadius: '6px', border: formatMode === 'standard' ? '2px solid #0070f3' : '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                    className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      formatMode === 'standard' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-800'
+                    }`}
                   >
-                    Standard Preset
+                    Standard Presets
                   </button>
                   <button
+                    type="button"
                     onClick={() => setFormatMode('custom')}
-                    style={{ flex: 1, padding: '8px', borderRadius: '6px', border: formatMode === 'custom' ? '2px solid #0070f3' : '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
+                    className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      formatMode === 'custom' ? 'bg-white text-indigo-600 shadow-xs' : 'text-slate-600 hover:text-slate-800'
+                    }`}
                   >
                     Custom Text
                   </button>
                 </div>
               </div>
 
+              {/* Format Selectors */}
               {formatMode === 'standard' ? (
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Format Preset:</label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Preset Format</label>
                   <select
                     value={format}
                     onChange={(e: any) => setFormat(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
                     <option value="page_n_of_total">Page 1 of N</option>
                     <option value="n_of_total">1 of N</option>
@@ -199,37 +252,41 @@ export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBa
                   </select>
                 </div>
               ) : (
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Enter Custom Text:</label>
-                  <input
-                    type="text"
-                    value={customText}
-                    onChange={(e) => setCustomText(e.target.value)}
-                    placeholder="Type your text here..."
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', marginBottom: '10px' }}
-                  />
-
-                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Number Attachment Format:</label>
-                  <select
-                    value={customNumberStyle}
-                    onChange={(e: any) => setCustomNumberStyle(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-                  >
-                    <option value="text_number">Text + Page Number (e.g. Text 1)</option>
-                    <option value="text_page_n_of_total">Text + Page 1 of N</option>
-                    <option value="text_only">Text Only (No Numbers)</option>
-                  </select>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Custom Prefix / Text</label>
+                    <input
+                      type="text"
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      placeholder="e.g. Confidential, Annexure, Doc"
+                      className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Numbering Style</label>
+                    <select
+                      value={customNumberStyle}
+                      onChange={(e: any) => setCustomNumberStyle(e.target.value)}
+                      className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    >
+                      <option value="text_number">Text + Page Number (e.g. Doc 1)</option>
+                      <option value="text_page_n_of_total">Text + Page 1 of N</option>
+                      <option value="text_only">Text Only (No Numbers)</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Position / Alignment:</label>
+              {/* Position / Alignment */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Alignment / Position</label>
                 <select
                   value={position}
                   onChange={(e: any) => setPosition(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                  className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="bottom-center">Bottom Center (Default)</option>
+                  <option value="bottom-center">Bottom Center (Recommended)</option>
                   <option value="bottom-right">Bottom Right</option>
                   <option value="bottom-left">Bottom Left</option>
                   <option value="top-center">Top Center</option>
@@ -238,29 +295,30 @@ export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBa
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Font Size:</label>
+              {/* Font Size & Color */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Font Size</label>
                   <select
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
-                    <option value={10}>10px</option>
-                    <option value={12}>12px</option>
-                    <option value={14}>14px</option>
-                    <option value={16}>16px</option>
-                    <option value={18}>18px</option>
-                    <option value={20}>20px</option>
+                    <option value={10}>10 px</option>
+                    <option value={12}>12 px</option>
+                    <option value={14}>14 px</option>
+                    <option value={16}>16 px</option>
+                    <option value={18}>18 px</option>
+                    <option value={20}>20 px</option>
                   </select>
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Font Color:</label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Font Color</label>
                   <select
                     value={fontColor}
                     onChange={(e) => setFontColor(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 'bold' }}
+                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
                     <option value="black">⚫ Black</option>
                     <option value="blue">🔵 Bright Blue</option>
@@ -276,92 +334,80 @@ export default function AddPageNumbersTool({ pdfjs, onBack }: { pdfjs: any; onBa
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center' }}>
+              {/* First Page Skip Checkbox */}
+              <div className="flex items-center gap-2.5 mt-1 pt-3 border-t border-slate-200">
                 <input
                   type="checkbox"
                   id="skipFirst"
                   checked={skipFirstPage}
                   onChange={(e) => setSkipFirstPage(e.target.checked)}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', marginRight: '8px' }}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="skipFirst" style={{ fontWeight: 'bold', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
-                  Skip 1st Page (Cover Page)
+                <label htmlFor="skipFirst" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                  Skip 1st Page (Keep cover page clean)
                 </label>
               </div>
-
             </div>
 
-            <div style={{ backgroundColor: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <h5 style={{ margin: '0 0 10px 0', color: '#475569' }}>🔍 Live Interactive Page Model</h5>
+            {/* Right Column: Live Interactive Page Model */}
+            <div className="lg:col-span-5 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <span className="text-xs font-bold text-slate-500 mb-4">🔍 Realtime Preview Model</span>
 
-              <div
-                style={{
-                  position: 'relative',
-                  width: '180px',
-                  height: '240px',
-                  backgroundColor: 'white',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '4px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  padding: '12px',
-                  overflow: 'hidden',
-                }}
-              >
-                <div style={{ borderBottom: '2px solid #e2e8f0', width: '60%', height: '8px', marginBottom: '10px' }}></div>
-                <div style={{ backgroundColor: '#f1f5f9', width: '100%', height: '6px', marginBottom: '6px' }}></div>
-                <div style={{ backgroundColor: '#f1f5f9', width: '80%', height: '6px', marginBottom: '6px' }}></div>
-                <div style={{ backgroundColor: '#f1f5f9', width: '90%', height: '6px', marginBottom: '6px' }}></div>
+              <div className="relative w-44 h-60 bg-white border border-slate-300 rounded-lg shadow-md p-3.5 flex flex-col justify-between overflow-hidden">
+                {/* Dummy lines */}
+                <div className="space-y-2 pointer-events-none">
+                  <div className="w-1/2 h-2 bg-slate-200 rounded"></div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded"></div>
+                  <div className="w-4/5 h-1.5 bg-slate-100 rounded"></div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded"></div>
+                  <div className="w-3/4 h-1.5 bg-slate-100 rounded"></div>
+                </div>
 
-                <span
+                {/* Simulated Number Badge */}
+                <div
+                  className={getPreviewPositionClasses()}
                   style={{
-                    ...getPreviewPositionStyle(),
-                    fontSize: `${fontSize}px`,
+                    fontSize: `${Math.min(fontSize, 14)}px`,
                     color: (colorMap[fontColor] || colorMap.black).hex,
                     fontWeight: 'bold',
-                    whiteSpace: 'nowrap',
                   }}
                 >
                   {getSampleText(1, pageNumPreviews.length || 5)}
-                </span>
+                </div>
               </div>
             </div>
-
           </div>
 
+          {/* Previews of uploaded pages */}
           {isLoadingNumPreviews ? (
-            <div style={{ textAlign: 'center', padding: '30px' }}>
-              <p style={{ color: '#0070f3', fontWeight: 'bold' }}>Loading Document Page Previews...</p>
+            <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="text-sm font-semibold text-slate-700">Loading Document Page Previews...</p>
             </div>
           ) : (
             <div>
-              <h4 style={{ margin: '0 0 10px 0', color: '#334155' }}>Document Pages Preview ({pageNumPreviews.length} Pages):</h4>
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-xs font-bold text-slate-700">
+                  Document Pages ({pageNumPreviews.length} Pages)
+                </h4>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '15px', maxHeight: '350px', overflowY: 'auto', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3.5 max-h-[320px] overflow-y-auto p-3.5 border border-slate-100 rounded-xl bg-slate-50/50">
                 {pageNumPreviews.map((src, index) => (
-                  <div key={index} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '6px', backgroundColor: 'white', textAlign: 'center' }}>
-                    <img src={src} alt={`Page ${index + 1}`} style={{ width: '100%', borderRadius: '4px' }} />
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>Page {index + 1}</span>
+                  <div key={index} className="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-xs">
+                    <img src={src} alt={`Page ${index + 1}`} className="w-full h-auto rounded object-contain mb-1.5" />
+                    <span className="text-[10px] font-bold text-slate-500">Page {index + 1}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Apply Button */}
           <button
             onClick={handleAddPageNumbers}
             disabled={isAddingPageNumbers}
-            style={{
-              marginTop: '25px',
-              width: '100%',
-              padding: '14px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#8b5cf6',
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-            }}
+            className="mt-6 w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isAddingPageNumbers ? 'Adding Page Numbers...' : '🔢 Apply Numbers & Download PDF'}
           </button>

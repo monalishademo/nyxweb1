@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { PDFDocument, degrees } from 'pdf-lib';
-import BackButton from '../BackButton';
 
 export default function RotatePdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: () => void }) {
   const [rotateFile, setRotateFile] = useState<File | null>(null);
@@ -99,117 +98,166 @@ export default function RotatePdfTool({ pdfjs, onBack }: { pdfjs: any; onBack: (
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-      <BackButton onClick={onBack} />
+    <div className="w-full max-w-5xl mx-auto p-8 bg-white rounded-2xl shadow-sm border border-slate-100">
+      {/* Header Section */}
+      <div className="flex items-center gap-3.5 mb-8">
+        <button
+          onClick={onBack}
+          type="button"
+          className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+          title="Back"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
 
-      <h2 style={{ margin: '0 0 10px 0', color: '#0f172a' }}>🔄 Rotate PDF Pages</h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>Rotate specific or all pages with live sample preview before saving.</p>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600">
+              NYX PDF Rotator
+            </h1>
+            <span className="px-2.5 py-0.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full">
+              PDF TOOL
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Rotate specific or all pages with live sample preview before saving.
+          </p>
+        </div>
+      </div>
 
+      {/* Upload Zone */}
       {!rotateFile ? (
-        <div style={{ border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '40px', textAlign: 'center', backgroundColor: '#f8fafc' }}>
+        <div className="relative border-2 border-dashed border-indigo-400/80 rounded-2xl p-12 bg-white flex flex-col items-center justify-center text-center transition-all hover:border-indigo-500">
           <input
             type="file"
             accept="application/pdf"
             onChange={handleRotateFileUpload}
             id="rotate-pdf-input"
-            style={{ display: 'none' }}
+            className="hidden"
           />
+
+          <div className="w-12 h-12 mb-4 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-center text-indigo-500">
+            <svg className="w-6 h-6 stroke-[1.8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+
+          <h3 className="text-sm font-bold text-slate-800 mb-1">Upload PDF Document</h3>
+          <p className="text-xs text-slate-500 mb-6">Select a file to rotate pages individually or altogether.</p>
+
           <label
             htmlFor="rotate-pdf-input"
-            style={{ backgroundColor: '#0070f3', color: 'white', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-block' }}
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg shadow-sm cursor-pointer transition-colors flex items-center gap-2"
           >
-            📁 Choose PDF File to Rotate
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Select PDF File
           </label>
         </div>
       ) : (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '15px 20px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
-            <span style={{ fontWeight: 'bold', color: '#334155' }}>Selected File: {rotateFile.name} ({rotatePagePreviews.length} Pages)</span>
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap gap-3 justify-between items-center mb-5 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-600">
+                File: <b className="text-slate-800">{rotateFile.name}</b> ({rotatePagePreviews.length} Pages)
+              </span>
+              <button
+                onClick={() => setRotateFile(null)}
+                className="text-xs text-rose-500 hover:underline font-medium ml-2 cursor-pointer"
+              >
+                Change File
+              </button>
+            </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="flex gap-2">
               <button
                 onClick={() => rotateAllPages('ccw')}
-                style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                ↶ Rotate All Left
+                <span>↶</span> Rotate All Left
               </button>
               <button
                 onClick={() => rotateAllPages('cw')}
-                style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                ↷ Rotate All Right
+                <span>↷</span> Rotate All Right
               </button>
             </div>
           </div>
 
           {isLoadingRotatePreviews ? (
-            <div style={{ textAlign: 'center', padding: '30px' }}>
-              <p style={{ color: '#0070f3', fontWeight: 'bold' }}>Generating Page Previews...</p>
+            <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="text-sm font-semibold text-slate-700">Generating page previews...</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '20px', maxHeight: '450px', overflowY: 'auto', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
-              {rotatePagePreviews.map((src, index) => {
-                const currentAngle = pageRotations[index] || 0;
-                return (
-                  <div key={index} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', backgroundColor: 'white', textAlign: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '10px' }}>
-                      Page {index + 1} {currentAngle !== 0 && `(${currentAngle}°)`}
-                    </span>
+            <>
+              {/* Previews Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[480px] overflow-y-auto p-4 border border-slate-100 rounded-xl bg-slate-50/50">
+                {rotatePagePreviews.map((src, index) => {
+                  const currentAngle = pageRotations[index] || 0;
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex flex-col justify-between"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[11px] font-bold text-slate-600">
+                          Page {index + 1}
+                        </span>
+                        {currentAngle !== 0 && (
+                          <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                            {currentAngle}°
+                          </span>
+                        )}
+                      </div>
 
-                    <div style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', margin: '10px 0' }}>
-                      <img
-                        src={src}
-                        alt={`Page ${index + 1}`}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '100%',
-                          borderRadius: '4px',
-                          transition: 'transform 0.2s ease',
-                          transform: `rotate(${currentAngle}deg)`,
-                        }}
-                      />
-                    </div>
+                      <div className="h-40 flex items-center justify-center overflow-hidden my-2 bg-slate-50 rounded-lg border border-slate-100 p-2">
+                        <img
+                          src={src}
+                          alt={`Page ${index + 1}`}
+                          className="max-h-full max-w-full object-contain transition-transform duration-300 ease-in-out"
+                          style={{
+                            transform: `rotate(${currentAngle}deg)`,
+                          }}
+                        />
+                      </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
-                      <button
-                        onClick={() => rotateSinglePage(index, 'ccw')}
-                        style={{ flex: 1, padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
-                        title="Rotate Left 90°"
-                      >
-                        ↶ 90°
-                      </button>
-                      <button
-                        onClick={() => rotateSinglePage(index, 'cw')}
-                        style={{ flex: 1, padding: '6px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}
-                        title="Rotate Right 90°"
-                      >
-                        ↷ 90°
-                      </button>
+                      <div className="grid grid-cols-2 gap-1.5 mt-2">
+                        <button
+                          onClick={() => rotateSinglePage(index, 'ccw')}
+                          className="py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+                          title="Rotate Left 90°"
+                        >
+                          ↶ 90°
+                        </button>
+                        <button
+                          onClick={() => rotateSinglePage(index, 'cw')}
+                          className="py-1.5 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+                          title="Rotate Right 90°"
+                        >
+                          ↷ 90°
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              {/* Submit / Download Button */}
+              <button
+                onClick={handleSaveRotatedPDF}
+                disabled={isSavingRotatedPdf}
+                className="mt-6 w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSavingRotatedPdf ? 'Saving Rotated PDF...' : '🔄 Save & Download Rotated PDF'}
+              </button>
+            </>
           )}
-
-          <button
-            onClick={handleSaveRotatedPDF}
-            disabled={isSavingRotatedPdf}
-            style={{
-              marginTop: '25px',
-              width: '100%',
-              padding: '14px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#8b5cf6',
-              color: 'white',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-            }}
-          >
-            {isSavingRotatedPdf ? 'Saving Rotated PDF...' : '🔄 Save & Download Rotated PDF'}
-          </button>
         </div>
       )}
     </div>
