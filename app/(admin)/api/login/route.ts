@@ -4,8 +4,13 @@ export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
 
-    const ENV_USER = process.env.ADMIN_USER || 'NYX ADMIN';
-    const ENV_PASS = process.env.ADMIN_PASS || 'NYXWEB1';
+    const ENV_USER = process.env.ADMIN_USER;
+    const ENV_PASS = process.env.ADMIN_PASS;
+
+    // যদি এনভায়রনমেন্ট ভ্যারিয়েবল সেট করা না থাকে, তবে সিকিউরিটির জন্য লগইন ব্লক করে দেবে
+    if (!ENV_USER || !ENV_PASS) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
     const isUserValid = username?.trim().toLowerCase() === ENV_USER.trim().toLowerCase();
     const isPassValid = password?.trim() === ENV_PASS.trim();

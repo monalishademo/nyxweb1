@@ -55,6 +55,141 @@ const ALLOWED_BENEFICIARY_TYPES = [
 
 const ALLOWED_CATEGORIES = ['GEN', 'OBC', 'ST', 'SC', 'NA'];
 
+const ALLOWED_HOUSEHOLD_INCOME = [
+  'Upto 50k',
+  '50k - 1 Lac',
+  '1 Lac - 2 Lac',
+  '2 Lac - 4 Lac',
+  '4 Lac +',
+];
+
+const ALLOWED_TOPICS = [
+  'Financial Literacy',
+  'Life skills',
+  'English for Job',
+  'Health & Hygiene',
+  'Gender Equality',
+  'POSH',
+  'POCSO (Child Rights)',
+  'Digital Literacy',
+  'Connecting World',
+  'Cyber Security',
+  'Govt Schemes',
+  'Career Counseling /Career Guidance Talk',
+  'Self-Defense Basics for Women',
+  'Waste and E-Waste Solutions',
+  'AI Course Module',
+  'Digital Empowerment(for Senior Citizen )',
+  'E-Governance',
+  'CANVA',
+  'Cancer Awareness',
+  'Community Awareness',
+  'Cyber Awareness',
+  'Digital Awareness',
+  'Drug Awareness',
+  'E-Commerce',
+  'Environment',
+  'Environmental Awareness',
+  'First Aid Training',
+  'Girls Safety',
+  'Internet Surfing',
+  'Mental Health',
+  'Net Zero Activity',
+  'Net Zero Awareness',
+  'Plastic Waste Management',
+  'Reduce Air Pollution',
+  'Safe Internet Day Celebrated',
+  'Save And Environment',
+  'Save Water',
+  'Social Media Safety',
+  'Women Empowerment',
+  'Power BI',
+  'Job Readiness',
+  'Digital Marketing',
+  'Civic Sense',
+];
+
+const STATE_DISTRICT_MASTER: Record<string, string[]> = {
+  'ANDAMAN AND NICOBAR ISLANDS': ['NICOBARS', 'NORTH AND MIDDLE ANDAMAN', 'SOUTH ANDAMANS'],
+  'ANDHRA PRADESH': ['ANANTAPUR', 'CHITTOOR', 'EAST GODAVARI', 'GUNTUR', 'KRISHNA', 'KURNOOL', 'NTR', 'PRAKASAM', 'SPSR NELLORE', 'SRIKAKULAM', 'VISAKHAPATANAM', 'VIZIANAGARAM', 'WEST GODAVARI', 'Y.S.R.'],
+  'ARUNACHAL PRADESH': ['ANJAW', 'CHANGLANG', 'DIBANG VALLEY', 'EAST KAMENG', 'EAST SIANG', 'Kra Daadi', 'KURUNG KUMEY', 'LOHIT', 'LONGDING', 'LOWER DIBANG VALLEY', 'LOWER SUBANSIRI', 'NAMSAI', 'PAPUM PARE', 'SIANG', 'TAWANG', 'TIRAP', 'UPPER SIANG', 'UPPER SUBANSIRI', 'WEST KAMENG', 'WEST SIANG'],
+  'ASSAM': ['BAKSA', 'BARPETA', 'BONGAIGAON', 'CACHAR', 'CHIRANG', 'DARRANG', 'DHEMAJI', 'DHUBRI', 'DIBRUGARH', 'DIMA HASAO', 'GOALPARA', 'GOLAGHAT', 'HAILAKANDI', 'JORHAT', 'KAMRUP', 'KAMRUP METRO', 'KARBI ANGLONG', 'KARIMGANJ', 'KOKRAJHAR', 'LAKHIMPUR', 'MARIGAON', 'NAGAON', 'NALBARI', 'SIVASAGAR', 'SONITPUR', 'TINSUKIA', 'UDALGURI'],
+  'BIHAR': ['ARARIA', 'ARWAL', 'AURANGABAD', 'BANKA', 'BEGUSARAI', 'BHAGALPUR', 'BHOJPUR', 'BUXAR', 'DARBHANGA', 'GAYA', 'GOPALGANJ', 'JAMUI', 'JEHANABAD', 'KAIMUR (BHABUA)', 'KATIHAR', 'KHAGARIA', 'KISHANGANJ', 'LAKHISARAI', 'MADHEPURA', 'MADHUBANI', 'MUNGER', 'MUZAFFARPUR', 'NALANDA', 'NAWADA', 'PASHCHIM CHAMPARAN', 'PATNA', 'PURBI CHAMPARAN', 'PURNIA', 'ROHTAS', 'SAHARSA', 'SAMASTIPUR', 'SARAN', 'SHEIKHPURA', 'SHEOHAR', 'SITAMARHI', 'SIWAN', 'SUPAUL', 'VAISHALI'],
+  'CHANDIGARH': ['CHANDIGARH'],
+  'CHHATTISGARH': ['BALOD', 'BALODA BAZAR', 'BALRAMPUR', 'BASTAR', 'BEMETARA', 'BIJAPUR', 'BILASPUR', 'DANTEWADA', 'DHAMTARI', 'DURG', 'GARIYABAND', 'JANJGIR-CHAMPA', 'JASHPUR', 'KABIRDHAM', 'KANKER', 'KONDAGAON', 'KORBA', 'KOREA', 'MAHASAMUND', 'MUNGELI', 'NARAYANPUR', 'RAIGARH', 'RAIPUR', 'RAJNANDGAON', 'SUKMA', 'SURAJPUR', 'SURGUJA'],
+  'DADRA AND NAGAR HAVELI': ['DADRA AND NAGAR HAVELI'],
+  'DAMAN AND DIU': ['DAMAN', 'DIU'],
+  'DELHI': ['CENTRAL', 'EAST', 'NEW DELHI', 'NORTH', 'NORTH EAST', 'NORTH WEST', 'SHAHDARA', 'SOUTH', 'South East', 'SOUTH WEST', 'WEST'],
+  'GOA': ['NORTH GOA', 'SOUTH GOA'],
+  'GUJARAT': ['AHMADABAD', 'AMRELI', 'ANAND', 'ARVALLI', 'BANAS KANTHA', 'BHARUCH', 'BHAVNAGAR', 'BOTAD', 'CHHOTAUDEPUR', 'DANG', 'DEVBHUMI DWARKA', 'DOHAD', 'GANDHINAGAR', 'GIR SOMNATH', 'JAMNAGAR', 'JUNAGADH', 'KACHCHH', 'KHEDA', 'MAHESANA', 'Mahisagar', 'MORBI', 'NARMADA', 'NAVSARI', 'PANCH MAHALS', 'PATAN', 'PORBANDAR', 'RAJKOT', 'SABAR KANTHA', 'SURAT', 'SURENDRANAGAR', 'TAPI', 'VADODARA', 'VALSAD'],
+  'HARYANA': ['AMBALA', 'BHIWANI', 'CHARKI DADRI', 'FARIDABAD', 'FATEHABAD', 'GURUGRAM', 'HISAR', 'JHAJJAR', 'JIND', 'KAITHAL', 'KARNAL', 'KURUKSHETRA', 'MAHENDRAGARH', 'MEWAT', 'PALWAL', 'PANCHKULA', 'PANIPAT', 'REWARI', 'ROHTAK', 'SIRSA', 'yAMUNANAGAR', 'YAMUNANAGAR'],
+  'HIMACHAL PRADESH': ['BILASPUR', 'CHAMBA', 'HAMIRPUR', 'KANGRA', 'KINNAUR', 'KULLU', 'LAHUL AND SPITI', 'MANDI', 'SHIMLA', 'SIRMAUR', 'SOLAN', 'UNA'],
+  'JAMMU AND KASHMIR': ['ANANTNAG', 'BADGAM', 'BANDIPORA', 'BARAMULLA', 'DODA', 'GANDERBAL', 'JAMMU', 'KARGIL', 'KATHUA', 'KISHTWAR', 'KULGAM', 'KUPWARA', 'LEH LADAKH', 'POONCH', 'PULWAMA', 'RAJAURI', 'RAMBAN', 'REASI', 'SAMBA', 'SHOPIAN', 'SRINAGAR', 'UDHAMPUR'],
+  'JHARKHAND': ['BOKARO', 'CHATRA', 'DEOGHAR', 'DHANBAD', 'DUMKA', 'EAST SINGHBUM', 'GARHWA', 'GIRIDIH', 'GODDA', 'GUMLA', 'HAZARIBAGH', 'JAMTARA', 'KHUNTI', 'KODERMA', 'LATEHAR', 'LOHARDAGA', 'PAKUR', 'PALAMU', 'RAMGARH', 'RANCHI', 'SAHEBGANJ', 'SARAIKELA KHARSAWAN', 'SIMDEGA', 'WEST SINGHBHUM'],
+  'KARNATAKA': ['BAGALKOT', 'BALLARI', 'BELAGAVI', 'BENGALURU RURAL', 'BENGALURU URBAN', 'BIDAR', 'CHAMARAJANAGAR', 'CHIKBALLAPUR', 'CHIKKAMAGALURU', 'CHITRADURGA', 'DAKSHIN KANNAD', 'DAVANGERE', 'DHARWAD', 'GADAG', 'HASSAN', 'HAVERI', 'KALABURAGI', 'KODAGU', 'KOLAR', 'KOPPAL', 'MANDYA', 'MYSURU', 'RAICHUR', 'RAMANAGARA', 'SHIVAMOGGA', 'TUMAKURU', 'UDUPI', 'UTTAR KANNAD', 'VIJAYAPURA', 'YADGIR'],
+  'KERALA': ['ALAPPUZHA', 'ERNAKULAM', 'IDUKKI', 'KANNUR', 'KASARAGOD', 'KOLLAM', 'KOTTAYAM', 'KOZHIKODE', 'MALAPPURAM', 'PALAKKAD', 'PATHANAMTHITTA', 'THIRUVANANTHAPURAM', 'THRISSUR', 'WAYANAD'],
+  'LAKSHADWEEP': ['LAKSHADWEEP DISTRICT'],
+  'MADHYA PRADESH': ['AGAR MALWA', 'ALIRAJPUR', 'ANUPPUR', 'ASHOKNAGAR', 'BALAGHAT', 'BARWANI', 'BETUL', 'BHIND', 'BHOPAL', 'BURHANPUR', 'CHHATARPUR', 'CHHINDWARA', 'DAMOH', 'DATIA', 'DEWAS', 'DHAR', 'DINDORI', 'EAST NIMAR', 'GUNA', 'GWALIOR', 'HARDA', 'HOSHANGABAD', 'INDORE', 'JABALPUR', 'JHABUA', 'KATNI', 'KHARGONE', 'MANDLA', 'MANDSAUR', 'MORENA', 'NARSINGHPUR', 'NEEMUCH', 'PANNA', 'RAISEN', 'RAJGARH', 'RATLAM', 'REWA', 'SAGAR', 'SATNA', 'SEHORE', 'SEONI', 'SHAHDOL', 'SHAJAPUR', 'SHEOPUR', 'SHIVPURI', 'SIDHI', 'SINGRAULI', 'TIKAMGARH', 'UJJAIN', 'UMARIA', 'VIDISHA'],
+  'MAHARASHTRA': ['AHMEDNAGAR', 'AKOLA', 'AMRAVATI', 'AURANGABAD', 'BEED', 'BHANDARA', 'BULDHANA', 'CHANDRAPUR', 'DHULE', 'GADCHIROLI', 'GONDIA', 'HINGOLI', 'JALGAON', 'JALNA', 'KOLHAPUR', 'LATUR', 'MUMBAI', 'MUMBAI SUBURBAN', 'NAGPUR', 'NANDED', 'NANDURBAR', 'NASHIK', 'OSMANABAD', 'PALGHAR', 'PARBHANI', 'PUNE', 'RAIGAD', 'RATNAGIRI', 'SANGLI', 'SATARA', 'SINDHUDURG', 'SOLAPUR', 'THANE', 'WARDHA', 'WASHIM', 'YAVATMAL'],
+  'MANIPUR': ['BISHNUPUR', 'CHANDEL', 'CHURACHANDPUR', 'IMPHAL EAST', 'IMPHAL WEST', 'SENAPATI', 'TAMENGLONG', 'THOUBAL', 'UKHRUL'],
+  'MEGHALAYA': ['EAST GARO HILLS', 'EAST JAINTIA HILLS', 'EAST KHASI HILLS', 'NORTH GARO HILLS', 'RI BHOI', 'SOUTH GARO HILLS', 'SOUTH WEST GARO HILLS', 'SOUTH WEST KHASI HILLS', 'WEST GARO HILLS', 'WEST JAINTIA HILLS', 'WEST KHASI HILLS'],
+  'MIZORAM': ['AIZAWL', 'CHAMPHAI', 'KOLASIB', 'LAWNGTLAI', 'LUNGLEI', 'MAMIT', 'SAIHA', 'SERCHHIP'],
+  'NAGALAND': ['DIMAPUR', 'KIPHIRE', 'KOHIMA', 'LONGLENG', 'MOKOKCHUNG', 'MON', 'PEREN', 'PHEK', 'TUENSANG', 'WOKHA', 'ZUNHEBOTO'],
+  'ODISHA': ['ANUGUL', 'BALANGIR', 'BALESHWAR', 'BARGARH', 'BHADRAK', 'BOUDH', 'CUTTACK', 'DEOGARH', 'DHENKANAL', 'GAJAPATI', 'GANJAM', 'JAGATSINGHAPUR', 'JAJAPUR', 'JHARSUGUDA', 'KALAHANDI', 'KANDHAMAL', 'KENDRAPARA', 'KENDUJHAR', 'KHORDHA', 'KORAPUT', 'MALKANGIRI', 'MAYURBHANJ', 'NABARANGPUR', 'NAYAGARH', 'NUAPADA', 'PURI', 'RAYAGADA', 'SAMBALPUR', 'SONEPUR', 'SUNDARGARH'],
+  'PUDUCHERRY': ['KARAIKAL', 'MAHE', 'PONDICHERRY', 'YANAM'],
+  'PUNJAB': ['AMRITSAR', 'BARNALA', 'BATHINDA', 'FARIDKOT', 'FATEHGARH SAHIB', 'FAZILKA', 'FIROZEPUR', 'GURDASPUR', 'HOSHIARPUR', 'JALANDHAR', 'KAPURTHALA', 'LUDHIANA', 'MANSA', 'MOGA', 'NAWANSHAHR', 'PATHANKOT', 'PATIALA', 'RUPNAGAR', 'SANGRUR', 'S.A.S Nagar', 'SRI MUKTSAR SAHIB', 'Tarn Taran'],
+  'RAJASTHAN': ['AJMER', 'ALWAR', 'BANSWARA', 'BARAN', 'BARMER', 'BHARATPUR', 'BHILWARA', 'BIKANER', 'BUNDI', 'CHITTORGARH', 'CHURU', 'DAUSA', 'DHOLPUR', 'DUNGARPUR', 'GANGANAGAR', 'HANUMANGARH', 'JAIPUR', 'JAISALMER', 'JALORE', 'JHALAWAR', 'JHUNJHUNU', 'JODHPUR', 'KARAULI', 'KOTA', 'NAGAUR', 'PALI', 'PRATAPGARH', 'RAJSAMAND', 'SAWAI MADHOPUR', 'SIKAR', 'SIROHI', 'TONK', 'UDAIPUR'],
+  'SIKKIM': ['EAST DISTRICT', 'NORTH DISTRICT', 'SOUTH DISTRICT', 'WEST DISTRICT'],
+  'TAMIL NADU': ['Ariyalur', 'CHENNAI', 'COIMBATORE', 'CUDDALORE', 'CHENGALPATTU', 'DHARMAPURI', 'DINDIGUL', 'ERODE', 'KANCHIPURAM', 'KANNIYAKUMARI', 'KARUR', 'KRISHNAGIRI', 'MADURAI', 'NAGAPATTINAM', 'NAMAKKAL', 'PERAMBALUR', 'PUDUKKOTTAI', 'RAMANATHAPURAM', 'SALEM', 'SIVAGANGA', 'THANJAVUR', 'THENI', 'THE NILGIRIS', 'THIRUVALLUR', 'THIRUVARUR', 'TIRUCHIRAPPALLI', 'TIRUNELVELI', 'TIRUPPUR', 'TIRUVANNAMALAI', 'TUTICORIN', 'THOOTHUKKUDI', 'VELLORE', 'VILLUPURAM', 'VIRUDHUNAGAR'],
+  'TELANGANA': ['ADILABAD', 'BHADRADRI', 'HYDERABAD', 'Jagitial', 'JANGOAN', 'JAYASHANKAR', 'JOGULAMBA', 'KAMAREDDY', 'KARIMNAGAR', 'KHAMMAM', 'KOMARAM BHEEM ASIFABAD', 'MAHABUBABAD', 'MAHBUBNAGAR', 'MANCHERIAL', 'MEDAK', 'MEDCHAL', 'NAGARKURNOOL', 'NALGONDA', 'Nirmal', 'NIZAMABAD', 'PEDDAPALLI', 'RAJANNA', 'RANGAREDDI', 'SANGAREDDY', 'SIDDIPET', 'SURYAPET', 'VIKARABAD', 'WANAPARTHY', 'WARANGAL', 'WARANGAL URBAN', 'YADADRI'],
+  'TRIPURA': ['Dhalai', 'Gomati', 'Khowai', 'North Tripura', 'Sepahijala', 'South Tripura', 'Unakoti', 'West Tripura'],
+  'UTTARAKHAND': ['ALMORA', 'BAGESHWAR', 'CHAMOLI', 'CHAMPAWAT', 'DEHRADUN', 'HARIDWAR', 'NAINITAL', 'PAURI GARHWAL', 'PITHORAGARH', 'RUDRA PRAYAG', 'TEHRI GARHWAL', 'UDAM SINGH NAGAR', 'UTTAR KASHI'],
+  'UTTAR PRADESH': ['AGRA', 'ALIGARH', 'ALLAHABAD', 'AMBEDKAR NAGAR', 'Amethi', 'AMROHA', 'AURAIYA', 'AZAMGARH', 'BAGHPAT', 'BAHRAICH', 'BALLIA', 'BALRAMPUR', 'BANDA', 'BARABANKI', 'BAREILLY', 'BASTI', 'BHADOHI', 'BIJNOR', 'BUDAUN', 'BULANDSHAHR', 'CHANDAULI', 'CHITRAKOOT', 'DEORIA', 'ETAH', 'ETAWAH', 'FAIZABAD', 'FARRUKHABAD', 'FATEHPUR', 'FIROZABAD', 'GAUTAM BUDDHA NAGAR', 'GHAZIABAD', 'GHAZIPUR', 'GONDA', 'GORAKHPUR', 'HAMIRPUR', 'HAPUR', 'HARDOI', 'HATHRAS', 'JALAUN', 'JAUNPUR', 'JHANSI', 'KANNAUJ', 'KANPUR DEHAT', 'KANPUR NAGAR', 'Kasganj', 'KAUSHAMBI', 'KHERI', 'KUSHI NAGAR', 'LALITPUR', 'LUCKNOW', 'MAHARAJGANJ', 'MAHOBA', 'MAINPURI', 'MATHURA', 'MAU', 'MEERUT', 'MIRZAPUR', 'MORADABAD', 'MUZAFFARNAGAR', 'PILIBHIT', 'PRATAPGARH', 'RAE BARELI', 'RAMPUR', 'SAHARANPUR', 'SAMBHAL', 'SANT KABEER NAGAR', 'SHAHJAHANPUR', 'SHAMLI', 'SHRAVASTI', 'SIDDHARTH NAGAR', 'SITAPUR', 'SONBHADRA', 'SULTANPUR', 'UNNAO', 'VARANASI'],
+  'WEST BENGAL': ['24 PARAGANAS NORTH', '24 PARAGANAS SOUTH', 'Alipurduar', 'BANKURA', 'BARDHAMAN', 'BIRBHUM', 'COOCHBEHAR', 'DARJEELING', 'DINAJPUR DAKSHIN', 'DINAJPUR UTTAR', 'HOOGHLY', 'HOWRAH', 'JALPAIGURI', 'KOLKATA', 'MALDAH', 'MEDINIPUR EAST', 'MEDINIPUR WEST', 'MURSHIDABAD', 'NADIA', 'PURULIA'],
+};
+
+const STATE_NAMES = Object.keys(STATE_DISTRICT_MASTER);
+
+// Case-insensitive lookup: returns the canonical master state key or ''
+const findStateKey = (stateValue: string): string => {
+  const upper = String(stateValue).trim().toUpperCase();
+  return STATE_NAMES.find((s) => s.toUpperCase() === upper) || '';
+};
+
+const normalizeTextKey = (value: string): string =>
+  String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BIRTHDATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+// Rule W: Batch numbers are sequential (1, 2, 3 ...) and restart from 1 whenever the date changes.
+const computePerDateBatchNames = (list: BatchConfig[]): string[] => {
+  const counts: Record<string, number> = {};
+  return list.map((b) => {
+    const key = String(b.batchDate || 'unknown');
+    const n = (counts[key] || 0) + 1;
+    counts[key] = n;
+    return String(n);
+  });
+};
+
+// All source-column aliases consumed during normalization (used to pass through optional fields 36-63)
+const CONSUMED_SOURCE_KEY_ALIASES = [
+  'FirstName', 'First Name', 'LastName', 'Last Name', 'Surname', 'FullName', 'Name', 'StudentName', 'Student Name',
+  'Center+Project', 'Center', 'CenterCode', 'Center Code',
+  'Gender', 'Mobile', 'Phone', 'Contact', 'Age', 'Category', 'Birthdate', 'Email',
+  'Course', 'CourseName', 'Batch', 'Batch Name', 'BatchName', 'Project',
+  'PrimaryParentGuardian', 'PrimaryParentGuardianName', 'ParentName', 'FatherName', 'Guardian',
+  'HouseholdIncome', 'HouseholdIncomeYearly', 'SourceData', 'SubTopic', 'State', 'District', 'City',
+  'PinCode', 'Pincode', 'TypeofDisability', 'TypeofDisablity', 'BeneficiaryType',
+  'DeliveryModeOfBatch', 'DeliveryMode', 'Faculty',
+  'EducationInstitute', 'SchoolName', 'School',
+  'BatchStartDate', 'Batch Date', 'StartDate', 'BatchStartTime', 'Start Time', 'StartTime', 'BatchEndTime', 'End Time', 'EndTime',
+];
+const CONSUMED_SOURCE_KEYS = new Set(
+  CONSUMED_SOURCE_KEY_ALIASES.map((k) => k.toLowerCase().replace(/[^a-z0-9]/g, ''))
+);
+
 export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateToolProps) {
   const [currentStep, setCurrentStep] = useState<number>(1);
 
@@ -336,27 +471,150 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
         });
       }
 
-      // 10. State Check
-      let state = String(row.State || '').trim();
-      if (state.toUpperCase() === 'UP') {
+      // 10. State & District Master Validation
+      let stateVal = String(row.State || '').trim();
+      const stateKey = findStateKey(stateVal);
+      if (stateVal && !stateKey) {
+        const stateNorm = normalizeTextKey(stateVal);
+        let suggestion: string | undefined;
+        if (stateNorm === 'UP' || stateNorm === 'UTTARPRADESH') suggestion = 'Uttar Pradesh';
+        else if (stateNorm === 'JK' || stateNorm === 'J&K' || stateNorm === 'JAMMUKASHMIR') suggestion = 'Jammu and Kashmir';
+        else if (stateNorm === 'WB' || stateNorm === 'WESTBENGAL') suggestion = 'West Bengal';
+
         errList.push({
           rowIndex: index,
           excelRowNumber,
           field: 'State',
-          currentValue: state,
-          issue: 'State abbreviations not allowed.',
+          currentValue: stateVal,
+          issue: 'State must be the full state name from the master list (abbreviations like UP / J&K are not allowed).',
           isFormatError: true,
-          suggestedValue: 'Uttar Pradesh',
+          suggestedValue: suggestion,
         });
-      } else if (state.toUpperCase() === 'J&K') {
+      } else if (stateKey) {
+        let districtVal = String(row.District || '').trim();
+        if (districtVal) {
+          const allowedDistricts = STATE_DISTRICT_MASTER[stateKey] || [];
+          const districtMatch = allowedDistricts.find(
+            (d) => normalizeTextKey(d) === normalizeTextKey(districtVal)
+          );
+          if (!districtMatch) {
+            errList.push({
+              rowIndex: index,
+              excelRowNumber,
+              field: 'District',
+              currentValue: districtVal,
+              issue: `District must match the state master list for ${stateKey}.`,
+              isFormatError: true,
+            });
+          }
+        }
+      }
+
+      // 11. Email Validation (valid email id or blank)
+      const emailVal = String(row.Email || '').trim();
+      if (emailVal && !EMAIL_REGEX.test(emailVal)) {
         errList.push({
           rowIndex: index,
           excelRowNumber,
-          field: 'State',
-          currentValue: state,
-          issue: 'State abbreviations not allowed.',
+          field: 'Email',
+          currentValue: emailVal,
+          issue: 'Email must be a valid email id or blank.',
           isFormatError: true,
-          suggestedValue: 'Jammu and Kashmir',
+        });
+      }
+
+      // 12. Birthdate Validation (YYYY-MM-DD or blank)
+      const birthdateVal = String(row.Birthdate || '').trim();
+      if (birthdateVal && !BIRTHDATE_REGEX.test(birthdateVal)) {
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'Birthdate',
+          currentValue: birthdateVal,
+          issue: 'Birthdate must be in YYYY-MM-DD format or blank.',
+          isFormatError: Boolean(birthdateVal),
+        });
+      }
+
+      // 13. PinCode Validation (exactly 6 digits, text)
+      let pincodeVal = String(row.PinCode || '').trim();
+      const pincodeDigits = pincodeVal.replace(/\D/g, '');
+      if (pincodeVal && !/^\d{6}$/.test(pincodeVal)) {
+        const hasSixDigits = pincodeDigits.length === 6;
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'PinCode',
+          currentValue: pincodeVal,
+          issue: 'PinCode must be exactly 6 digits in text format.',
+          isFormatError: Boolean(pincodeVal) && hasSixDigits,
+          suggestedValue: hasSixDigits ? pincodeDigits : undefined,
+        });
+      }
+
+      // 14. TypeofDisablity Validation (NA or blank)
+      let disabilityVal = String(row.TypeofDisability || '').trim();
+      const disabilityUp = disabilityVal.toUpperCase();
+      if (disabilityVal && disabilityUp !== 'NA' && disabilityUp !== 'N/A') {
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'TypeofDisablity',
+          currentValue: disabilityVal,
+          issue: 'TypeofDisablity must be NA or blank.',
+          isFormatError: true,
+          suggestedValue: 'NA',
+        });
+      }
+
+      // 15. HouseholdIncomeYearly Validation (dropdown list)
+      let incomeVal = String(row.HouseholdIncome || '').trim();
+      if (
+        incomeVal &&
+        !ALLOWED_HOUSEHOLD_INCOME.some((opt) => normalizeTextKey(opt) === normalizeTextKey(incomeVal))
+      ) {
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'HouseholdIncomeYearly',
+          currentValue: incomeVal,
+          issue: 'HouseholdIncomeYearly must match the allowed dropdown list (Upto 50k / 50k - 1 Lac / 1 Lac - 2 Lac / 2 Lac - 4 Lac / 4 Lac +).',
+          isFormatError: true,
+          suggestedValue: 'Upto 50k',
+        });
+      }
+
+      // 16. SourceData Validation (Beneficiary Type master list)
+      let sourceDataVal = String(row.SourceData || '').trim();
+      if (
+        sourceDataVal &&
+        !ALLOWED_BENEFICIARY_TYPES.some((t) => normalizeTextKey(t) === normalizeTextKey(sourceDataVal))
+      ) {
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'SourceData',
+          currentValue: sourceDataVal,
+          issue: 'SourceData must match the Beneficiary Type master list.',
+          isFormatError: true,
+          suggestedValue: 'School',
+        });
+      }
+
+      // 17. SubTopic Validation (Topic master list)
+      let subTopicVal = String(row.SubTopic || '').trim();
+      if (
+        subTopicVal &&
+        !ALLOWED_TOPICS.some((t) => normalizeTextKey(t) === normalizeTextKey(subTopicVal))
+      ) {
+        errList.push({
+          rowIndex: index,
+          excelRowNumber,
+          field: 'SubTopic',
+          currentValue: subTopicVal,
+          issue: 'SubTopic must match the Topic master list.',
+          isFormatError: true,
+          suggestedValue: 'Financial Literacy',
         });
       }
     });
@@ -373,7 +631,7 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
 
   // Detect and Extract Pre-existing Batches directly from Excel File
   const extractBatchesFromExcel = (rows: any[]) => {
-    const batchMap: { [key: string]: { count: number; date: string; start: string; end: string } } = {};
+    const batchMap: { [key: string]: { count: number; date: string; start: string; end: string; name: string } } = {};
 
     rows.forEach((r) => {
       const bName = getRowValue(r, 'BatchName', 'Batch Name', 'Batch');
@@ -385,22 +643,30 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
       if (bEnd.length > 5) bEnd = bEnd.substring(0, 5);
 
       if (bName) {
-        if (!batchMap[bName]) {
-          batchMap[bName] = { count: 0, date: bDate, start: bStart, end: bEnd };
+        const mapKey = `${bDate}__${bName}`;
+        if (!batchMap[mapKey]) {
+          batchMap[mapKey] = { count: 0, date: bDate, start: bStart, end: bEnd, name: String(bName) };
         }
-        batchMap[bName].count += 1;
+        batchMap[mapKey].count += 1;
       }
     });
 
     const batchKeys = Object.keys(batchMap);
     if (batchKeys.length > 0) {
       const excelBatches: BatchConfig[] = batchKeys.map((k) => ({
-        batchName: String(k),
+        batchName: batchMap[k].name,
         studentCount: Math.min(batchMap[k].count, 300),
         batchDate: batchMap[k].date,
         startTime: batchMap[k].start,
         endTime: batchMap[k].end,
       }));
+
+      // Rule W: re-derive per-date numbering
+      const perDateNames = computePerDateBatchNames(excelBatches);
+      excelBatches.forEach((b, i) => {
+        b.batchName = perDateNames[i];
+      });
+
       setBatches(excelBatches);
       validateBatchSchedule(excelBatches);
     } else {
@@ -441,6 +707,17 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
             }
           }
 
+          // Optional fields (template columns 36-63): keep any source columns not consumed above
+          const extras: Record<string, string> = {};
+          Object.keys(row).forEach((k) => {
+            if (k.startsWith('__')) return;
+            const norm = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (CONSUMED_SOURCE_KEYS.has(norm)) return;
+            const v = row[k];
+            if (v === undefined || v === null) return;
+            extras[k] = String(v);
+          });
+
           return {
             FirstName: fn,
             LastName: ln,
@@ -467,6 +744,7 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
             DeliveryModeOfBatch: getRowValue(row, 'DeliveryModeOfBatch', 'DeliveryMode') || 'Hybrid',
             Faculty: getRowValue(row, 'Faculty') || defaultFaculty,
             EducationInstitute: getRowValue(row, 'EducationInstitute', 'SchoolName', 'School'),
+            __extras: extras,
           };
         });
 
@@ -547,6 +825,10 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
         if (sVal === 'UP') row.State = 'Uttar Pradesh';
         if (sVal === 'J&K') row.State = 'Jammu and Kashmir';
 
+        let pVal = String(row.PinCode || '');
+        const pDigits = pVal.replace(/\D/g, '');
+        if (pDigits.length === 6) row.PinCode = pDigits;
+
         return row;
       })
     );
@@ -562,7 +844,11 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
     }
 
     if (!err.suggestedValue) return;
-    let targetKey = err.field === 'Last Name' ? 'LastName' : err.field;
+    const FIELD_KEY_MAP: Record<string, string> = {
+      'HouseholdIncomeYearly': 'HouseholdIncome',
+      'TypeofDisablity': 'TypeofDisability',
+    };
+    let targetKey = err.field === 'Last Name' ? 'LastName' : FIELD_KEY_MAP[err.field] || err.field;
     updateRowField(err.rowIndex, targetKey, err.suggestedValue);
   };
 
@@ -586,6 +872,12 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
         endTime: schedule.endTime,
       });
     }
+
+    // Rule W: batch numbers restart from 1 whenever the date changes
+    const perDateNames = computePerDateBatchNames(newBatches);
+    newBatches.forEach((b, i) => {
+      b.batchName = perDateNames[i];
+    });
 
     setBatches(newBatches);
     validateBatchSchedule(newBatches);
@@ -642,6 +934,12 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
     } else {
       (updated[index] as any)[field] = value;
     }
+
+    // Rule W: re-derive per-date batch numbering after any batch change
+    const perDateNames = computePerDateBatchNames(updated);
+    updated.forEach((b, i) => {
+      b.batchName = perDateNames[i];
+    });
 
     setBatches(updated);
     validateBatchSchedule(updated);
@@ -707,10 +1005,13 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
     const isValid = validateBatchSchedule(batches);
     if (!isValid) return;
 
+    // Rule W: per-date batch numbering
+    const perDateNames = computePerDateBatchNames(batches);
+
     let currentIdx = 0;
     const finalData: any[] = [];
 
-    batches.forEach((b) => {
+    batches.forEach((b, batchIndex) => {
       const slice = rawRows.slice(currentIdx, currentIdx + b.studentCount);
       currentIdx += b.studentCount;
 
@@ -718,27 +1019,29 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
       const dObj = new Date(year, month - 1, day);
       const dayOfWeek = dObj.getDay();
       const batchDayVal = dayOfWeek >= 1 && dayOfWeek <= 6 ? String(dayOfWeek) : '1';
+      const batchName = perDateNames[batchIndex];
 
       slice.forEach((row) => {
         const firstName = String(row.FirstName || '').trim();
         const lastName = String(row.LastName || '').trim();
 
+        // Preserve 'NA' gender exactly (bug fix: previously 'NA' was mapped to 'Male')
         let genderRaw = String(row.Gender || '').trim().toUpperCase();
-        let gender = genderRaw.startsWith('F') ? 'Female' : 'Male';
+        let gender = genderRaw === 'NA' ? 'NA' : genderRaw.startsWith('F') ? 'Female' : 'Male';
 
         let mobile = String(row.Mobile || '').replace(/\D/g, '').slice(-10);
         let guardian = String(row.PrimaryParentGuardian || '').trim();
         let school = String(row.EducationInstitute || globalSchoolName).trim();
-        let pincodeStr = String(row.PinCode || '').trim();
+        let pincodeStr = String(row.PinCode || '').replace(/\D/g, '').slice(0, 6);
 
         const cleanAgeStr = String(row.Age || '').replace(/[^\d.]/g, '').split('.')[0] || '14';
 
-        finalData.push({
-          'Center+Project': String(row['Center+Project'] || centerCode),
+        const outRow: any = {
+          'Center CODE': String(row['Center+Project'] || centerCode),
           'FirstName': firstName,
           'LastName': lastName,
           'Gender': gender,
-          'Category': row.Category || 'NA',
+          'Category': String(row.Category || 'NA').toUpperCase(),
           'Birthdate': String(row.Birthdate || ''),
           'Age': cleanAgeStr,
           'Mobile': mobile,
@@ -746,19 +1049,19 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
           'Course': row.Course || defaultCourse,
           'Batch': row.Batch || '',
           'Project': row.Project || '',
-          'PrimaryParentGuardian': guardian,
-          'HouseholdIncome': row.HouseholdIncome || '',
+          'PrimaryParentGuardianName': guardian,
+          'HouseholdIncomeYearly': row.HouseholdIncome || '',
           'SourceData': row.SourceData || 'School',
           'SubTopic': row.SubTopic || '',
           'State': row.State || '',
           'District': row.District || '',
           'City': row.City || '',
           'PinCode': pincodeStr,
-          'TypeofDisability': row.TypeofDisability || '',
+          'TypeofDisablity': row.TypeofDisability || '',
           'BeneficiaryType': row.BeneficiaryType || 'School',
-          'BatchName': String(b.batchName),
+          'BatchName': batchName,
           'DeliveryModeOfBatch': row.DeliveryModeOfBatch || 'Hybrid',
-          'RequestedBatchSize': '300',
+          'RequestedBatchSize': String(b.studentCount),
           'IncludeHolidays': 'TRUE',
           'BatchDays': `${batchDayVal};`,
           'BatchType': 'Normal',
@@ -768,7 +1071,19 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
           'BatchEndTime': `${b.endTime}:00`,
           'EducationInstitute': school,
           'Country': 'India',
-        });
+        };
+
+        // Optional fields (template columns 36-63): pass through when present in the source
+        const extras = row.__extras;
+        if (extras && typeof extras === 'object') {
+          Object.keys(extras).forEach((k) => {
+            const v = extras[k];
+            if (v === undefined || v === null || v === '') return;
+            if (outRow[k] === undefined) outRow[k] = String(v);
+          });
+        }
+
+        finalData.push(outRow);
       });
     });
 
@@ -786,8 +1101,15 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
       const schoolCleanName = (globalSchoolName || processedData[0]?.EducationInstitute || 'School')
         .replace(/[^a-zA-Z0-9]/g, '_');
 
-      batches.forEach((b) => {
-        const batchRecords = processedData.filter((row) => String(row.BatchName) === String(b.batchName));
+      const perDateNames = computePerDateBatchNames(batches);
+
+      batches.forEach((b, idx) => {
+        const batchName = perDateNames[idx];
+        const batchRecords = processedData.filter(
+          (row) =>
+            String(row.BatchName) === String(batchName) &&
+            String(row.BatchStartDate) === String(b.batchDate)
+        );
         const ws = XLSX.utils.json_to_sheet(batchRecords);
 
         Object.keys(ws).forEach((cell) => {
@@ -799,10 +1121,10 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
         });
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `Batch_${b.batchName}`);
+        XLSX.utils.book_append_sheet(wb, ws, `Batch_${batchName}`);
 
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const fileName = `${schoolCleanName}_Batch_${b.batchName}_${b.batchDate}.xlsx`;
+        const fileName = `${schoolCleanName}_Batch_${batchName}_${b.batchDate}.xlsx`;
         zip.file(fileName, excelBuffer);
       });
 
@@ -1209,13 +1531,33 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
                     const guardianVal = String(row.PrimaryParentGuardian || '').trim();
                     const schoolVal = String(row.EducationInstitute || globalSchoolName).trim();
 
+                    const birthdateVal = String(row.Birthdate || '').trim();
+                    const emailVal = String(row.Email || '').trim();
+                    const pinVal = String(row.PinCode || '').trim();
+                    const incomeVal = String(row.HouseholdIncome || '').trim();
+                    const stateVal = String(row.State || '').trim();
+                    const districtVal = String(row.District || '').trim();
+                    const rowStateKey = findStateKey(stateVal);
+
                     // Real-time cell-level error flags
                     const isLastNameErr = !ln;
                     const isGenderErr = !['MALE', 'FEMALE', 'NA'].includes(genderVal.toUpperCase());
                     const isMobileErr = !/^[6-9]\d{9}$/.test(mobileVal.replace(/\D/g, '').slice(-10));
                     const isAgeErr = !ageRawIsValid(ageVal);
                     const isCenterErr = !rowCenter;
-                    const hasRowError = isLastNameErr || isGenderErr || isMobileErr || isAgeErr || isCenterErr || !guardianVal || !schoolVal;
+                    const isBirthdateErr = birthdateVal ? !BIRTHDATE_REGEX.test(birthdateVal) : false;
+                    const isEmailErr = emailVal ? !EMAIL_REGEX.test(emailVal) : false;
+                    const isPinCodeErr = pinVal ? !/^\d{6}$/.test(pinVal) : false;
+                    const isIncomeErr = incomeVal
+                      ? !ALLOWED_HOUSEHOLD_INCOME.some((o) => normalizeTextKey(o) === normalizeTextKey(incomeVal))
+                      : false;
+                    const isStateErr = stateVal ? !rowStateKey : false;
+                    const isDistrictErr = rowStateKey && districtVal
+                      ? !(STATE_DISTRICT_MASTER[rowStateKey] || []).some(
+                          (d) => normalizeTextKey(d) === normalizeTextKey(districtVal)
+                        )
+                      : false;
+                    const hasRowError = isLastNameErr || isGenderErr || isMobileErr || isAgeErr || isCenterErr || !guardianVal || !schoolVal || isPinCodeErr || isBirthdateErr || isEmailErr || isIncomeErr || isStateErr || isDistrictErr;
 
                     return (
                       <tr key={i} className={`transition-colors ${hasRowError ? 'bg-rose-50/50 hover:bg-rose-100/40' : 'hover:bg-slate-50'}`}>
@@ -1280,7 +1622,8 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
                           >
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
-                            {genderVal && !['Male', 'Female'].includes(genderVal) && (
+                            <option value="NA">NA</option>
+                            {genderVal && !['Male', 'Female', 'NA'].includes(genderVal) && (
                               <option value={genderVal}>{genderVal} (Invalid)</option>
                             )}
                           </select>
@@ -1325,7 +1668,19 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
                         {/* State */}
                         <td className="p-2.5 border-r border-slate-100">{row.State || '-'}</td>
                         <td className="p-2.5 border-r border-slate-100">{row.District || '-'}</td>
-                        <td className="p-2.5 font-mono">{row.PinCode || '-'}</td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={row.PinCode || ''}
+                            onChange={(e) => updateRowField(i, 'PinCode', e.target.value)}
+                            className={`font-mono text-xs px-1.5 py-0.5 rounded w-24 outline-none border ${
+                              isPinCodeErr
+                                ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold'
+                                : 'bg-transparent border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white'
+                            }`}
+                            placeholder="6-digit PIN"
+                          />
+                        </td>
                       </tr>
                     );
                   })}
@@ -1416,12 +1771,13 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
             {batches.map((b, idx) => (
               <div key={idx} className="bg-slate-50/80 border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-center">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Batch Number</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Batch Number (auto per date)</label>
                   <input
                     type="text"
+                    readOnly
                     value={b.batchName}
-                    onChange={(e) => handleBatchConfigChange(idx, 'batchName', e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    title="Batch numbering restarts from 1 when the date changes (Rule W)"
+                    className="w-full bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-indigo-700 font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 
@@ -1548,13 +1904,13 @@ export default function AbcPulseBatchCreateTool({ onBack }: AbcPulseBatchCreateT
                   {processedData.map((row, i) => (
                     <tr key={i} className="hover:bg-slate-50 transition-colors">
                       <td className="p-2.5 border-r border-slate-100 text-slate-400 font-mono">{i + 1}</td>
-                      <td className="p-2.5 border-r border-slate-100 font-mono text-indigo-600 font-bold">{row['Center+Project']}</td>
+                      <td className="p-2.5 border-r border-slate-100 font-mono text-indigo-600 font-bold">{row['Center CODE']}</td>
                       <td className="p-2.5 border-r border-slate-100">{row.FirstName}</td>
                       <td className="p-2.5 border-r border-slate-100 font-medium text-slate-900">{row.LastName}</td>
                       <td className="p-2.5 border-r border-slate-100">{row.Gender}</td>
                       <td className="p-2.5 border-r border-slate-100 font-mono">{row.Mobile}</td>
                       <td className="p-2.5 border-r border-slate-100 font-mono">{row.Age}</td>
-                      <td className="p-2.5 border-r border-slate-100 text-slate-700">{row.PrimaryParentGuardian}</td>
+                      <td className="p-2.5 border-r border-slate-100 text-slate-700">{row.PrimaryParentGuardianName}</td>
                       <td className="p-2.5 border-r border-slate-100 text-emerald-700 font-bold font-mono">{row.BatchName}</td>
                       <td className="p-2.5 border-r border-slate-100">{row.DeliveryModeOfBatch}</td>
                       <td className="p-2.5 border-r border-slate-100 font-mono">{row.RequestedBatchSize}</td>

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, Shield, LogOut, Users } from 'lucide-react';
+import { Plus, Shield, LogOut, Users, MapPin } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -50,6 +50,24 @@ export default function AdminDashboardPage() {
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
               Generate & print Excel attendance sheets
+            </p>
+          </div>
+        </Link>
+
+        {/* GPS Map Camera Tool Card */}
+        <Link 
+          href="/tools/gps-camera"
+          className="bg-slate-900 border border-slate-800 hover:border-emerald-500/50 p-6 rounded-2xl transition group flex flex-col items-start justify-between space-y-3 cursor-pointer min-h-[160px] hover:bg-slate-900/80"
+        >
+          <div className="p-3 bg-sky-500/10 text-sky-400 rounded-xl transition">
+            <MapPin className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white group-hover:text-sky-400 transition">
+              GPS Map Camera
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Stamp custom GPS coordinates, date & time on photos
             </p>
           </div>
         </Link>

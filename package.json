@@ -30,6 +30,7 @@
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "lamejs": "^1.2.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.28.0",
     "mammoth": "^1.12.0",
     "markdown-it": "^15.0.0",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/js-yaml": "^4.0.9",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
     "@types/qrcode": "^1.5.6",
