@@ -200,6 +200,38 @@ function drawCameraBadge(ctx: CanvasRenderingContext2D, x: number, y: number, w:
   ctx.fillText('GPS Map Camera', x + 26 * s, y + h / 2 + 0.4 * s)
 }
 
+function drawSimpleBackButton(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  const btnW = 100 * s
+  const btnH = 40 * s
+  
+  ctx.save()
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'
+  if (ctx.roundRect) {
+    ctx.beginPath()
+    ctx.roundRect(x, y, btnW, btnH, 8 * s)
+    ctx.fill()
+  } else {
+    ctx.fillRect(x, y, btnW, btnH)
+  }
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+  ctx.lineWidth = 1 * s
+  if (ctx.roundRect) {
+    ctx.beginPath()
+    ctx.roundRect(x, y, btnW, btnH, 8 * s)
+    ctx.stroke()
+  } else {
+    ctx.strokeRect(x, y, btnW, btnH)
+  }
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `500 ${Math.round(15 * s)}px Roboto, Arial, sans-serif`
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'center'
+  ctx.fillText('← Back', x + btnW / 2, y + btnH / 2)
+  ctx.restore()
+}
+
 export async function drawStamp(
   canvas: HTMLCanvasElement,
   photo: HTMLImageElement,
@@ -318,6 +350,8 @@ export async function drawStamp(
   const badgeX = boxW - badgeW - 20 * s
   const badgeY = boxY - badgeH
   drawCameraBadge(ctx, badgeX, badgeY, badgeW, badgeH, s)
+
+  drawSimpleBackButton(ctx, 30 * s, 30 * s, s)
 }
 
 export function canvasToJpeg(canvas: HTMLCanvasElement, quality = 0.95): string {

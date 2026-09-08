@@ -2,15 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Plus, Shield, LogOut, Users, MapPin } from 'lucide-react';
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
-
   const handleLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
-    router.push('/login');
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      window.location.href = '/login';
+    }
   };
 
   return (

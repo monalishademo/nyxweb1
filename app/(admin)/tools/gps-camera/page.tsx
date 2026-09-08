@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { Camera, Clock, Download, Loader2, MapPin, RefreshCw, Search } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, Camera, Clock, Download, Loader2, MapPin, RefreshCw, Search } from 'lucide-react';
 import { canvasToJpeg, drawStamp, type StampData } from './stamp';
 import { flagUrlFor, reversePlace, searchPlaces, type PlaceHit } from './geo';
 
-// SSR Error এড়ানোর জন্য MapPicker ডাইনামিক ইমপোর্ট করা হলো
+// SSR Error এড়ানোর জন্য MapPicker ডাইনামিক ইমপোর্ট করা হলো
 const MapPicker = dynamic(() => import('./MapPicker'), { ssr: false });
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -187,6 +188,18 @@ export default function AdminGpsCameraPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_#123024_0%,_#0b1220_45%,_#070b14_100%)] p-4 sm:p-6 font-sans">
       <div className="mx-auto max-w-6xl">
+        
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-2 text-xs font-bold text-slate-200 transition hover:bg-slate-800 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+
         <header className="mb-8 text-center">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
             <MapPin className="h-3.5 w-3.5" />

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import { Printer, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Printer, UploadCloud } from 'lucide-react';
 
 interface Student {
   sno: number;
@@ -100,72 +101,86 @@ export default function CiscoAttendancePage() {
 
   return (
     <div className="min-h-screen bg-slate-950 p-3 text-slate-100 print:bg-white print:p-0">
-      <div className="print:hidden mx-auto mb-3 max-w-[1280px] rounded-lg border border-slate-800 bg-slate-900 p-3">
-        <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2">
-          <h1 className="text-sm font-bold text-white">Cisco Attendance Sheet Generator</h1>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+      
+      {/* Back Button and Controls Container */}
+      <div className="print:hidden mx-auto mb-3 max-w-[1280px]">
+        <div className="mb-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-800 hover:text-white"
           >
-            <Printer className="h-3.5 w-3.5" />
-            Print / Save as PDF
-          </button>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
         </div>
 
-        <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Institute Name:</label>
-            <input className={inputClass} value={headerData.instituteName} onChange={updateHeader('instituteName')} />
+        <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
+          <div className="mb-2 flex items-center justify-between border-b border-slate-800 pb-2">
+            <h1 className="text-sm font-bold text-white">Cisco Attendance Sheet Generator</h1>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Print / Save as PDF
+            </button>
           </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Course Name:</label>
-            <input className={inputClass} value={headerData.courseName} onChange={updateHeader('courseName')} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Institute Address:</label>
-            <input className={inputClass} value={headerData.instituteAddress} onChange={updateHeader('instituteAddress')} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Workshop Date</label>
-            <input
-              className={inputClass}
-              value={headerData.workshopDate}
-              onChange={updateHeader('workshopDate')}
-              placeholder="DD/MM/YYYY"
-            />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Trainer Name:</label>
-            <input className={inputClass} value={headerData.trainerName} onChange={updateHeader('trainerName')} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Scheduled Time:</label>
-            <input className={inputClass} value={headerData.scheduledTime} onChange={updateHeader('scheduledTime')} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Org SPOC Name & Mobile No.</label>
-            <input className={inputClass} value={headerData.spocNameMobile} onChange={updateHeader('spocNameMobile')} />
-          </div>
-          <div>
-            <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Org SPOC Email ID</label>
-            <input className={inputClass} value={headerData.spocEmail} onChange={updateHeader('spocEmail')} />
-          </div>
-        </div>
 
-        <div className="relative flex cursor-pointer items-center gap-2.5 rounded-md border border-dashed border-slate-700 bg-slate-950/50 px-2.5 py-2 hover:border-emerald-500">
-          <UploadCloud className="h-5 w-5 shrink-0 text-slate-400" />
-          <div>
-            <p className="text-xs font-medium text-slate-300">Upload Excel (.xlsx, .xls)</p>
-            <span className="text-[10px] text-slate-500">Student Name, Gender, Age, Guardians Name, Mobile Number</span>
+          <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Institute Name:</label>
+              <input className={inputClass} value={headerData.instituteName} onChange={updateHeader('instituteName')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Course Name:</label>
+              <input className={inputClass} value={headerData.courseName} onChange={updateHeader('courseName')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Institute Address:</label>
+              <input className={inputClass} value={headerData.instituteAddress} onChange={updateHeader('instituteAddress')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Workshop Date</label>
+              <input
+                className={inputClass}
+                value={headerData.workshopDate}
+                onChange={updateHeader('workshopDate')}
+                placeholder="DD/MM/YYYY"
+              />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Trainer Name:</label>
+              <input className={inputClass} value={headerData.trainerName} onChange={updateHeader('trainerName')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Scheduled Time:</label>
+              <input className={inputClass} value={headerData.scheduledTime} onChange={updateHeader('scheduledTime')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Org SPOC Name & Mobile No.</label>
+              <input className={inputClass} value={headerData.spocNameMobile} onChange={updateHeader('spocNameMobile')} />
+            </div>
+            <div>
+              <label className="mb-0.5 block text-[10px] font-semibold text-slate-400">Org SPOC Email ID</label>
+              <input className={inputClass} value={headerData.spocEmail} onChange={updateHeader('spocEmail')} />
+            </div>
           </div>
-          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="absolute inset-0 cursor-pointer opacity-0" />
+
+          <div className="relative flex cursor-pointer items-center gap-2.5 rounded-md border border-dashed border-slate-700 bg-slate-950/50 px-2.5 py-2 hover:border-emerald-500">
+            <UploadCloud className="h-5 w-5 shrink-0 text-slate-400" />
+            <div>
+              <p className="text-xs font-medium text-slate-300">Upload Excel (.xlsx, .xls)</p>
+              <span className="text-[10px] text-slate-500">Student Name, Gender, Age, Guardians Name, Mobile Number</span>
+            </div>
+            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="absolute inset-0 cursor-pointer opacity-0" />
+          </div>
+          {students.length > 0 && (
+            <p className="mt-1 text-[11px] font-semibold text-emerald-400">
+              Successfully loaded {students.length} students ({studentPages.length} page(s))
+            </p>
+          )}
         </div>
-        {students.length > 0 && (
-          <p className="mt-1 text-[11px] font-semibold text-emerald-400">
-            Successfully loaded {students.length} students ({studentPages.length} page(s))
-          </p>
-        )}
       </div>
 
       <div className="cisco-sheets flex flex-col items-center overflow-auto">
