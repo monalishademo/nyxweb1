@@ -17,7 +17,7 @@ export default function ChatWithPdfTool({ pdfjs, onBack }: ChatWithPdfProps) {
   const [loadingAction, setLoadingAction] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // ব্রাউজারে পিডিএফ রিড করার চেষ্টা, ফেইল করলে ইউজারকে ফেন্ডলি নোটিফিকেশন দেওয়া
+  // ব্রাউজারে পিডিএফ রিড করার চেষ্টা, ফেইল করলে ইউজারকে ফেন্ডলি নোটিফিকেশন দেওয়া
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -31,11 +31,12 @@ export default function ChatWithPdfTool({ pdfjs, onBack }: ChatWithPdfProps) {
       reader.onload = async function () {
         try {
           const pdfjsLib = await import('pdfjs-dist');
-          // লোকাল বা সঠিক ওয়ার্কার পাথ সেট করা
+          // লোকাল বা সঠিক ওয়ার্কার পাথ সেট করা
           pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
           const typedArray = new Uint8Array(this.result as ArrayBuffer);
-          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          // Vercel build error fix: passing data object to getDocument
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
           let fullText = '';
 
           for (let i = 1; i <= pdf.numPages; i++) {
