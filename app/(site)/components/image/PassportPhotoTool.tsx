@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const REMOVE_BG_API_KEY = process.env.NEXT_PUBLIC_REMOVE_BG_API_KEY || 'QYL5agiSCEkcV9eFHpE1ncYA';
+// SECURITY FIX: no hardcoded fallback key. Must be set via env variable.
+const REMOVE_BG_API_KEY = process.env.NEXT_PUBLIC_REMOVE_BG_API_KEY || '';
 
 // Passport photo constants @ 300 DPI (1.2" x 1.5")
 const DPI = 300;
@@ -10,6 +11,9 @@ const SINGLE_W = Math.round(1.2 * DPI); // 360 px
 const SINGLE_H = Math.round(1.5 * DPI); // 450 px
 const SHEET_PHOTO_W = Math.round(1.2 * DPI); // 360 px
 const SHEET_PHOTO_H = Math.round(1.37 * DPI); // 411 px
+
+const MAX_UPLOAD_MB = 12;
+const RENDER_DEBOUNCE_MS = 120;
 
 type SheetKind = '4x6' | '5x7' | 'A4';
 
@@ -66,6 +70,23 @@ function setJpegDpi(dataUrl: string, dpi: number): string {
   return 'data:image/jpeg;base64,' + btoa(binary);
 }
 
+// Shared capacity calculation (was duplicated in two places before)
+function getSheetCapacity(sheetKind: SheetKind, isUpscaled2X: boolean) {
+  const sheet = SHEETS[sheetKind];
+  const scale = isUpscaled2X ? 2 : 1;
+  const W = sheet.w * scale;
+  const H = sheet.h * scale;
+  const pw = SHEET_PHOTO_W * scale;
+  const ph = SHEET_PHOTO_H * scale;
+  const marginX = Math.round(0.075 * DPI * scale);
+  const marginY = Math.round(0.075 * DPI * scale);
+  const gapX = Math.round(0.05 * DPI * scale);
+  const gapY = Math.round(0.05 * DPI * scale);
+  const cols = Math.max(1, Math.floor((W - 2 * marginX + gapX) / (pw + gapX)));
+  const rows = Math.max(1, Math.floor((H - 2 * marginY + gapY) / (ph + gapY)));
+  return cols * rows;
+}
+
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
@@ -73,6 +94,9 @@ export default function App() {
 
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [bgError, setBgError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
 
   const [bgColor, setBgColor] = useState('#ffffff');
   const [transparentBg, setTransparentBg] = useState(false);
@@ -83,25 +107,26 @@ export default function App() {
   const [posY, setPosY] = useState(0);
 
   const [isUpscaled2X, setIsUpscaled2X] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
 
   // 1. Basic Tone Controls
-  const [brightness, setBrightness] = useState(0); // -100 to +100
-  const [contrast, setContrast] = useState(0); // -100 to +100
-  const [saturation, setSaturation] = useState(0); // -100 to +100
+  const [brightness, setBrightness] = useState(0);
+  const [contrast, setContrast] = useState(0);
+  const [saturation, setSaturation] = useState(0);
 
   // 2. RGB Color Balance Sliders
-  const [redBalance, setRedBalance] = useState(0); // -100 to +100
-  const [greenBalance, setGreenBalance] = useState(0); // -100 to +100
-  const [blueBalance, setBlueBalance] = useState(0); // -100 to +100
+  const [redBalance, setRedBalance] = useState(0);
+  const [greenBalance, setGreenBalance] = useState(0);
+  const [blueBalance, setBlueBalance] = useState(0);
 
   // 3. Temperature & Tint Sliders
-  const [tempTone, setTempTone] = useState(0); // -50 (Cold/Blue) to +50 (Warm/Yellow)
-  const [tintTone, setTintTone] = useState(0); // -50 (Green) to +50 (Magenta)
+  const [tempTone, setTempTone] = useState(0);
+  const [tintTone, setTintTone] = useState(0);
 
-  // 4. Tone Curve / Curves (Shadows, Midtones, Highlights)
-  const [curveShadows, setCurveShadows] = useState(0); // -50 to +50
-  const [curveMidtones, setCurveMidtones] = useState(0); // -50 to +50
-  const [curveHighlights, setCurveHighlights] = useState(0); // -50 to +50
+  // 4. Tone Curve / Curves
+  const [curveShadows, setCurveShadows] = useState(0);
+  const [curveMidtones, setCurveMidtones] = useState(0);
+  const [curveHighlights, setCurveHighlights] = useState(0);
 
   // 5. Sharpen & Beautify
   const [sharpness, setSharpness] = useState(15);
@@ -116,7 +141,28 @@ export default function App() {
   const [sheetResultUrl, setSheetResultUrl] = useState<string | null>(null);
 
   const imgCacheRef = useRef<HTMLImageElement | null>(null);
+  const objectUrlsRef = useRef<string[]>([]); // track for cleanup
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeSrc = cleanCutoutSrc || rawImageSrc;
+
+  // Track & clean up object URLs to avoid memory leaks
+  const trackUrl = (url: string) => {
+    objectUrlsRef.current.push(url);
+    return url;
+  };
+  const revokeAllTrackedUrls = () => {
+    objectUrlsRef.current.forEach((u) => {
+      try {
+        URL.revokeObjectURL(u);
+      } catch {
+        /* ignore */
+      }
+    });
+    objectUrlsRef.current = [];
+  };
+  useEffect(() => {
+    return () => revokeAllTrackedUrls(); // cleanup on unmount
+  }, []);
 
   useEffect(() => {
     if (!activeSrc) {
@@ -129,14 +175,26 @@ export default function App() {
       imgCacheRef.current = img;
       renderAll();
     };
+    img.onerror = () => {
+      setUploadError('Image load failed. File corrupt hote pare — onno ekta try korun.');
+      imgCacheRef.current = null;
+    };
     img.src = activeSrc;
   }, [activeSrc]);
 
-  const rafRef = useRef<number | null>(null);
+  // Debounced re-render: avoids freezing the UI while dragging sliders,
+  // especially important in 600 DPI mode where the pixel loop is heavy.
   useEffect(() => {
     if (!imgCacheRef.current) return;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => renderAll());
+    setIsRendering(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      renderAll();
+      setIsRendering(false);
+    }, RENDER_DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [
     rotation, zoom, posX, posY,
     brightness, contrast, saturation,
@@ -147,16 +205,44 @@ export default function App() {
     sheetMode, sheetKind, copies,
   ]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  const validateFile = (f: File): string | null => {
+    if (!f.type.startsWith('image/')) {
+      return 'Sudhu image file (JPG/PNG) upload korun.';
+    }
+    if (f.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      return `File size ${MAX_UPLOAD_MB}MB er beshi hote parbe na.`;
+    }
+    return null;
+  };
+
+  const loadFile = (selected: File) => {
+    const err = validateFile(selected);
+    if (err) {
+      setUploadError(err);
+      return;
+    }
+    setUploadError(null);
+    revokeAllTrackedUrls();
     setFile(selected);
     setCleanCutoutSrc(null);
     setSingleResultUrl(null);
     setSheetResultUrl(null);
     setBgError(null);
     resetControls();
-    setRawImageSrc(URL.createObjectURL(selected));
+    setRawImageSrc(trackUrl(URL.createObjectURL(selected)));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    loadFile(selected);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) loadFile(dropped);
   };
 
   const resetControls = () => {
@@ -198,7 +284,7 @@ export default function App() {
     let maxL = 0;
 
     for (let i = 0; i < d.length; i += 4) {
-      if (d[i + 3] < 100) continue; // Skip transparency
+      if (d[i + 3] < 100) continue;
       const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
       if (lum < minL) minL = lum;
       if (lum > maxL) maxL = lum;
@@ -219,6 +305,10 @@ export default function App() {
   };
 
   const handleRemoveBg = async () => {
+    if (!REMOVE_BG_API_KEY) {
+      setBgError('Remove.bg API key configure kora hoyni. NEXT_PUBLIC_REMOVE_BG_API_KEY env variable set korun.');
+      return;
+    }
     if (!file && !rawImageSrc) return;
     setIsRemovingBg(true);
     setBgError(null);
@@ -242,7 +332,7 @@ export default function App() {
         throw new Error(errJson.errors?.[0]?.title || 'Remove.bg API error / limit reached');
       }
       const blob = await resp.blob();
-      setCleanCutoutSrc(URL.createObjectURL(blob));
+      setCleanCutoutSrc(trackUrl(URL.createObjectURL(blob)));
     } catch (err: any) {
       setBgError(err.message || 'Background removal failed');
     } finally {
@@ -250,15 +340,12 @@ export default function App() {
     }
   };
 
-  // -------------------------------------------------------------
-  // High-Precision Pixel Processing Pipeline (LUT Array Engine)
-  // -------------------------------------------------------------
   const renderPassportCanvas = (
     img: HTMLImageElement,
     targetW: number,
     targetH: number
   ): HTMLCanvasElement => {
-    const SS = 2; // Supersampling factor for crisp anti-aliasing
+    const SS = 2;
     const iw = targetW * SS;
     const ih = targetH * SS;
 
@@ -276,7 +363,6 @@ export default function App() {
       ictx.clearRect(0, 0, iw, ih);
     }
 
-    // 1. Draw base transform
     ictx.save();
     const imgAspect = img.width / img.height;
     const targetAspect = targetW / targetH;
@@ -294,7 +380,6 @@ export default function App() {
     ictx.drawImage(img, -img.width / 2, -img.height / 2);
     ictx.restore();
 
-    // 2. Build 256-Entry Look-Up Tables (LUT) for Studio Grade Speed & Quality
     const lutR = new Uint8Array(256);
     const lutG = new Uint8Array(256);
     const lutB = new Uint8Array(256);
@@ -302,16 +387,13 @@ export default function App() {
     const cFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
     const bShift = brightness * 2.55;
 
-    // Combined Temp & Tint Channel Shifts
     const rShift = redBalance * 2 + tempTone * 1.5 + tintTone * 0.8;
     const gShift = greenBalance * 2 - tintTone * 1.2;
     const bShiftChan = blueBalance * 2 - tempTone * 1.8;
 
     for (let i = 0; i < 256; i++) {
-      // Contrast & Brightness
       let val = cFactor * (i - 128) + 128 + bShift;
 
-      // S-Curve & Tone Mapping (Shadows, Midtones, Highlights)
       const norm = val / 255;
       if (norm < 0.5) {
         val += curveShadows * Math.sin(norm * Math.PI) * 0.8;
@@ -325,7 +407,6 @@ export default function App() {
       lutB[i] = Math.min(255, Math.max(0, val + bShiftChan));
     }
 
-    // Apply LUT + Saturation
     const imgData = ictx.getImageData(0, 0, iw, ih);
     const pixels = imgData.data;
     const satMult = (saturation + 100) / 100;
@@ -337,7 +418,6 @@ export default function App() {
       let g = lutG[pixels[i + 1]];
       let b = lutB[pixels[i + 2]];
 
-      // Saturation Adjustment
       if (saturation !== 0) {
         const gray = 0.299 * r + 0.587 * g + 0.114 * b;
         r = gray + satMult * (r - gray);
@@ -351,7 +431,6 @@ export default function App() {
     }
     ictx.putImageData(imgData, 0, 0);
 
-    // 3. Smooth Skin Beautify (Preserving Edges)
     if (beautifyLevel > 0) {
       const bl = beautifyLevel / 100;
       const beauty = document.createElement('canvas');
@@ -368,7 +447,6 @@ export default function App() {
       ictx.restore();
     }
 
-    // 4. High-Pass Crisp Sharpness
     if (sharpness > 0) {
       const s = sharpness / 100;
       const sharpCanvas = document.createElement('canvas');
@@ -384,7 +462,6 @@ export default function App() {
       ictx.restore();
     }
 
-    // 5. High Quality Downscaling to Output Size
     const out = document.createElement('canvas');
     out.width = targetW;
     out.height = targetH;
@@ -393,7 +470,6 @@ export default function App() {
     octx.imageSmoothingQuality = 'high';
     octx.drawImage(inner, 0, 0, targetW, targetH);
 
-    // Stroke Border
     if (addBorder) {
       const bw = Math.max(2, Math.round(targetW / 120));
       octx.strokeStyle = '#000000';
@@ -416,7 +492,6 @@ export default function App() {
     const mime = transparentBg ? 'image/png' : 'image/jpeg';
     const rawDataUrl = canvas.toDataURL(mime, 0.98);
 
-    // Inject true 300/600 DPI header
     const dpiDataUrl = transparentBg ? rawDataUrl : setJpegDpi(rawDataUrl, targetDpi);
     setSingleResultUrl(dpiDataUrl);
   };
@@ -509,18 +584,7 @@ export default function App() {
   };
 
   const sheet = SHEETS[sheetKind];
-  const maxCapacity = (() => {
-    const scale = isUpscaled2X ? 2 : 1;
-    const W = sheet.w * scale, H = sheet.h * scale;
-    const pw = SHEET_PHOTO_W * scale, ph = SHEET_PHOTO_H * scale;
-    const marginX = Math.round(0.075 * DPI * scale);
-    const marginY = Math.round(0.075 * DPI * scale);
-    const gapX = Math.round(0.05 * DPI * scale);
-    const gapY = Math.round(0.05 * DPI * scale);
-    const cols = Math.max(1, Math.floor((W - 2 * marginX + gapX) / (pw + gapX)));
-    const rows = Math.max(1, Math.floor((H - 2 * marginY + gapY) / (ph + gapY)));
-    return cols * rows;
-  })();
+  const maxCapacity = getSheetCapacity(sheetKind, isUpscaled2X);
 
   return (
     <main className="min-h-screen py-8 px-4 bg-slate-100">
@@ -536,16 +600,34 @@ export default function App() {
 
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
           {!rawImageSrc ? (
-            <div className="border-2 border-dashed border-sky-400 rounded-2xl p-12 text-center bg-sky-50">
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
+                isDragOver ? 'border-sky-600 bg-sky-100' : 'border-sky-400 bg-sky-50'
+              }`}
+            >
               <input type="file" accept="image/*" onChange={handleFileUpload} id="pp-input" className="hidden" />
               <div className="text-5xl mb-3">🖼️</div>
               <label htmlFor="pp-input" className="inline-block bg-sky-600 hover:bg-sky-700 text-white px-8 py-4 rounded-lg font-bold cursor-pointer text-base">
                 Upload Your Photo
               </label>
-              <p className="text-xs text-slate-500 mt-4">JPG / PNG • High resolution front-facing photo</p>
+              <p className="text-xs text-slate-500 mt-4">
+                JPG / PNG • High resolution front-facing photo • or drag & drop here (max {MAX_UPLOAD_MB}MB)
+              </p>
+              {uploadError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm max-w-md mx-auto">
+                  ⚠️ {uploadError}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
+              {uploadError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">⚠️ {uploadError}</div>
+              )}
+
               <div className="flex flex-wrap items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
                 <div>
                   <div className="font-bold text-blue-900">✂️ Studio Background Removal</div>
@@ -555,12 +637,19 @@ export default function App() {
                 </div>
                 <button
                   onClick={handleRemoveBg}
-                  disabled={isRemovingBg}
+                  disabled={isRemovingBg || !REMOVE_BG_API_KEY}
+                  title={!REMOVE_BG_API_KEY ? 'API key not configured' : undefined}
                   className={`px-4 py-2 rounded-lg font-bold text-white text-sm ${cleanCutoutSrc ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'} disabled:opacity-60`}
                 >
                   {isRemovingBg ? '⏳ Cutting Out...' : cleanCutoutSrc ? '✔ HD BG Removed' : '✨ Remove Background'}
                 </button>
               </div>
+
+              {!REMOVE_BG_API_KEY && (
+                <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+                  ⚙️ Background removal disabled: set <code>NEXT_PUBLIC_REMOVE_BG_API_KEY</code> in your environment to enable it.
+                </div>
+              )}
 
               {bgError && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">⚠️ {bgError}</div>
@@ -588,6 +677,14 @@ export default function App() {
                       </div>
                     </div>
                     <input type="checkbox" checked={isUpscaled2X} onChange={e => setIsUpscaled2X(e.target.checked)} className="w-5 h-5 accent-green-600" />
+                  </label>
+
+                  <label className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg p-3 cursor-pointer">
+                    <div>
+                      <div className="font-bold text-purple-800 text-sm">🧭 Alignment Guide</div>
+                      <div className="text-[11px] text-purple-700">Eye-line & chin guide overlay (not printed)</div>
+                    </div>
+                    <input type="checkbox" checked={showGuide} onChange={e => setShowGuide(e.target.checked)} className="w-5 h-5 accent-purple-600" />
                   </label>
 
                   <div>
@@ -629,7 +726,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* REAL COLOR BALANCE CONTROLS */}
                   <div className="border-t border-slate-200 pt-3 space-y-3">
                     <div className="font-semibold text-slate-800 text-sm">🎨 RGB Color Balance</div>
                     <Slider label="🔴 Red Balance" value={redBalance} min={-50} max={50} onChange={setRedBalance} />
@@ -637,14 +733,12 @@ export default function App() {
                     <Slider label="🔵 Blue Balance" value={blueBalance} min={-50} max={50} onChange={setBlueBalance} />
                   </div>
 
-                  {/* TEMPERATURE & TINT */}
                   <div className="border-t border-slate-200 pt-3 space-y-3">
                     <div className="font-semibold text-slate-800 text-sm">🌡 Color Temperature & Tint</div>
                     <Slider label="🟡 Warm (Yellow) / 🔵 Cold (Blue)" value={tempTone} min={-50} max={50} onChange={setTempTone} />
                     <Slider label="🔴 Tint (Magenta) / 🟢 Tint (Green)" value={tintTone} min={-50} max={50} onChange={setTintTone} />
                   </div>
 
-                  {/* S-CURVES & TONE */}
                   <div className="border-t border-slate-200 pt-3 space-y-3">
                     <div className="font-semibold text-slate-800 text-sm">📈 Curves & Tone Mapping</div>
                     <Slider label="🌑 Shadows Curve" value={curveShadows} min={-50} max={50} onChange={setCurveShadows} />
@@ -652,7 +746,6 @@ export default function App() {
                     <Slider label="☀️ Highlights Curve" value={curveHighlights} min={-50} max={50} onChange={setCurveHighlights} />
                   </div>
 
-                  {/* BASIC LIGHT CONTROLS */}
                   <div className="border-t border-slate-200 pt-3 space-y-3">
                     <div className="font-semibold text-slate-800 text-sm">☀ Basic Exposure & Contrast</div>
                     <div className="grid grid-cols-2 gap-3">
@@ -676,7 +769,15 @@ export default function App() {
                   </label>
 
                   <button
-                    onClick={() => { setRawImageSrc(null); setCleanCutoutSrc(null); setFile(null); setSingleResultUrl(null); setSheetResultUrl(null); }}
+                    onClick={() => {
+                      revokeAllTrackedUrls();
+                      setRawImageSrc(null);
+                      setCleanCutoutSrc(null);
+                      setFile(null);
+                      setSingleResultUrl(null);
+                      setSheetResultUrl(null);
+                      setUploadError(null);
+                    }}
                     className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 py-2 rounded-lg font-semibold text-sm"
                   >
                     🔄 Change Photo
@@ -704,8 +805,33 @@ export default function App() {
                       <div className="font-bold text-slate-900 mb-4">🎯 Single Passport Output</div>
                       {singleResultUrl ? (
                         <>
-                          <div className="p-3 rounded-lg shadow-md inline-block mb-4" style={{ background: 'repeating-conic-gradient(#cbd5e1 0% 25%, white 0% 50%) 50% / 20px 20px' }}>
-                            <img src={singleResultUrl} alt="Passport" className="block" style={{ width: '288px', height: '360px' }} />
+                          <div
+                            className="relative p-3 rounded-lg shadow-md inline-block mb-4"
+                            style={{ background: 'repeating-conic-gradient(#cbd5e1 0% 25%, white 0% 50%) 50% / 20px 20px' }}
+                          >
+                            <img src={singleResultUrl} alt="Passport preview" className="block" style={{ width: '288px', height: '360px' }} />
+                            {isRendering && (
+                              <div className="absolute inset-3 bg-white/50 flex items-center justify-center rounded">
+                                <span className="text-xs font-bold text-slate-600">Updating…</span>
+                              </div>
+                            )}
+                            {showGuide && !isRendering && (
+                              <svg
+                                className="absolute inset-3 pointer-events-none"
+                                width="288"
+                                height="360"
+                                viewBox="0 0 288 360"
+                              >
+                                {/* Head-height guide box, roughly ICAO proportions */}
+                                <rect x="64" y="30" width="160" height="200" rx="70" fill="none" stroke="#22c55e" strokeDasharray="4 4" strokeWidth="1.5" />
+                                {/* Eye line */}
+                                <line x1="20" y1="120" x2="268" y2="120" stroke="#3b82f6" strokeDasharray="4 4" strokeWidth="1" />
+                                <text x="24" y="115" fontSize="9" fill="#3b82f6">eye line</text>
+                                {/* Chin line */}
+                                <line x1="20" y1="230" x2="268" y2="230" stroke="#f59e0b" strokeDasharray="4 4" strokeWidth="1" />
+                                <text x="24" y="243" fontSize="9" fill="#f59e0b">chin line</text>
+                              </svg>
+                            )}
                           </div>
                           <div className="text-xs text-slate-600 mb-3 text-center">
                             Dimension: <b>1.2&quot; × 1.5&quot;</b> ({isUpscaled2X ? '720×900 px @ 600 DPI' : '360×450 px @ 300 DPI'})<br />
@@ -770,7 +896,7 @@ export default function App() {
 
                       {sheetResultUrl ? (
                         <div className="flex flex-col items-center">
-                          <div className="bg-white shadow-md border border-slate-200 mb-3 p-1">
+                          <div className="relative bg-white shadow-md border border-slate-200 mb-3 p-1">
                             <img
                               src={sheetResultUrl}
                               alt="Print Sheet"
@@ -780,6 +906,11 @@ export default function App() {
                                 height: `${Math.min(340, sheet.w / 4) * (sheet.h / sheet.w)}px`,
                               }}
                             />
+                            {isRendering && (
+                              <div className="absolute inset-1 bg-white/60 flex items-center justify-center">
+                                <span className="text-xs font-bold text-slate-600">Updating…</span>
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs text-slate-600 mb-3 text-center">
                             Sheet Resolution: <b>{sheet.w * (isUpscaled2X ? 2 : 1)} × {sheet.h * (isUpscaled2X ? 2 : 1)} px</b> ({sheet.label} @ {isUpscaled2X ? '600' : '300'} DPI)
@@ -842,6 +973,7 @@ function Slider({ label, value, min, max, step = 1, onChange, suffix = '', fixed
         step={step}
         value={value}
         onChange={e => onChange(Number(e.target.value))}
+        aria-label={label}
         className="w-full accent-blue-600"
       />
     </div>

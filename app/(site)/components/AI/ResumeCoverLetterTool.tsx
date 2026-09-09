@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import {
   Sparkles,
   Send,
@@ -25,7 +25,6 @@ import {
   Award,
   FolderGit2,
   Heart,
-  Link2,
   Upload,
   FileText,
   RotateCcw,
@@ -36,7 +35,6 @@ import {
   Mail,
   MapPin,
   Globe,
-  Crop,
   Layers,
   Sparkle
 } from 'lucide-react';
@@ -344,11 +342,12 @@ const commaToTags = (text: string): string[] =>
     .map((t) => t.trim())
     .filter(Boolean);
 
+// 👈 সেন্ট্রালাইজড এআই হাব (`/api/ai-hub`) কল করার ফাংশন
 async function callAI(prompt: string): Promise<string> {
-  const res = await fetch('/api/gemini', {
+  const res = await fetch('/api/ai-hub', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ type: 'text', prompt }),
   });
   if (!res.ok) {
     let msg = `Request failed (${res.status})`;
@@ -361,8 +360,8 @@ async function callAI(prompt: string): Promise<string> {
     throw new Error(msg);
   }
   const data = await res.json();
-  if (data?.text) return data.text;
-  throw new Error(data?.error || 'Empty response from AI');
+  if (data?.result || data?.text) return data.result || data.text;
+  throw new Error(data?.error || 'Empty response from AI Hub');
 }
 
 function SectionHeader({ title, style, color }: { title: string; style: string; color: { primary: string; text: string; muted: string; dark: boolean } }) {
@@ -783,7 +782,6 @@ export default function ResumeCoverLetterTool({ onBack }: ResumeCoverLetterToolP
       );
     }
 
-    {/* Custom Sections */}
     data.customSections.forEach((sec) => {
       kids.push(
         section(

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import BackButton from '../BackButton';
+import { Mic, Volume2, Play, Square, Copy, ArrowLeft, AlertCircle, Sliders } from 'lucide-react';
 
 type Mode = 'tts' | 'stt';
 
-export default function TextToSpeechTool({ onBack }: { onBack: () => void }) {
+export default function TextToSpeechTool({ onBack }: { onBack?: () => void }) {
   const [mode, setMode] = useState<Mode>('tts');
 
   // TTS state
@@ -99,116 +99,183 @@ export default function TextToSpeechTool({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', maxWidth: '650px', margin: '0 auto' }}>
-      <BackButton onClick={onBack} />
-      <h2 style={{ margin: '15px 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>🎙️</span> Text ⇄ Speech
-      </h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>Convert text to spoken audio, or speech to text — right in your browser.</p>
-
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '25px' }}>
-        <button
-          onClick={() => setMode('tts')}
-          style={{ flex: 1, padding: '12px', borderRadius: '8px', border: mode === 'tts' ? '2px solid #db2777' : '1px solid #cbd5e1', background: mode === 'tts' ? '#fce7f3' : 'white', fontWeight: 'bold', cursor: 'pointer' }}
-        >
-          🔊 Text to Speech
-        </button>
-        <button
-          onClick={() => setMode('stt')}
-          style={{ flex: 1, padding: '12px', borderRadius: '8px', border: mode === 'stt' ? '2px solid #db2777' : '1px solid #cbd5e1', background: mode === 'stt' ? '#fce7f3' : 'white', fontWeight: 'bold', cursor: 'pointer' }}
-        >
-          🎤 Speech to Text
-        </button>
+    <div className="max-w-6xl mx-auto space-y-6 pb-12 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Text &amp; Speech Studio
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-bold tracking-wider">
+                UTILITY
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Convert text to spoken audio, or speech to text — right in your browser
+            </p>
+          </div>
+        </div>
       </div>
 
-      {mode === 'tts' ? (
-        <div>
-          <textarea
-            value={ttsText}
-            onChange={(e) => setTtsText(e.target.value)}
-            placeholder="Type something to hear it out loud..."
-            rows={5}
-            style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box', marginBottom: '15px', resize: 'vertical' }}
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#334155', marginBottom: '6px' }}>Voice</label>
-              <select
-                value={selectedVoice}
-                onChange={(e) => setSelectedVoice(e.target.value)}
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-              >
-                {voices.map((v) => (
-                  <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#334155', marginBottom: '6px' }}>Speed: {rate.toFixed(1)}x</label>
-              <input type="range" min={0.5} max={2} step={0.1} value={rate} onChange={(e) => setRate(parseFloat(e.target.value))} style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            {!isSpeaking ? (
-              <button onClick={speak} style={{ padding: '12px 28px', borderRadius: '8px', border: 'none', background: '#db2777', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
-                🔊 Speak
-              </button>
-            ) : (
-              <button onClick={stopSpeaking} style={{ padding: '12px 28px', borderRadius: '8px', border: 'none', background: '#64748b', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
-                ⏹ Stop
-              </button>
-            )}
-          </div>
+      {/* Main Container */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl mx-auto">
+        
+        {/* Mode Switcher Tabs */}
+        <div className="flex bg-slate-100 dark:bg-slate-950/60 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <button
+            onClick={() => setMode('tts')}
+            className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              mode === 'tts'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Volume2 className="w-4 h-4" /> Text to Speech
+          </button>
+          <button
+            onClick={() => setMode('stt')}
+            className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              mode === 'stt'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Mic className="w-4 h-4" /> Speech to Text
+          </button>
         </div>
-      ) : (
-        <div>
-          {!sttSupported && (
-            <div style={{ padding: '15px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '8px', textAlign: 'center', marginBottom: '20px', fontWeight: '600' }}>
-              ❌ Speech recognition isn't supported in this browser. Try Chrome or Edge.
-            </div>
-          )}
 
-          {errorMessage && (
-            <div style={{ padding: '15px', backgroundColor: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: '8px', textAlign: 'center', marginBottom: '20px', fontWeight: '600' }}>
-              ❌ {errorMessage}
+        {mode === 'tts' ? (
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <Volume2 className="w-3.5 h-3.5 text-indigo-500" /> Text Content *
+              </label>
+              <textarea
+                value={ttsText}
+                onChange={(e) => setTtsText(e.target.value)}
+                placeholder="Type something to hear it out loud..."
+                rows={5}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none transition-all placeholder:text-slate-400 text-slate-800 dark:text-slate-200"
+              />
             </div>
-          )}
 
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            {!isListening ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Voice</label>
+                <select
+                  value={selectedVoice}
+                  onChange={(e) => setSelectedVoice(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  {voices.map((v) => (
+                    <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Speed</label>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{rate.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.1}
+                  value={rate}
+                  onChange={(e) => setRate(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer mt-3"
+                />
+              </div>
+            </div>
+
+            <div className="text-center pt-2">
+              {!isSpeaking ? (
+                <button
+                  onClick={speak}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:opacity-95 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 cursor-pointer"
+                >
+                  <Play className="w-4 h-4" /> Speak Aloud
+                </button>
+              ) : (
+                <button
+                  onClick={stopSpeaking}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-slate-700 hover:bg-slate-800 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                >
+                  <Square className="w-4 h-4" /> Stop Speaking
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {!sttSupported && (
+              <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>Speech recognition isn&apos;t supported in this browser. Try Chrome or Edge.</span>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 rounded-2xl text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            <div className="text-center">
+              {!isListening ? (
+                <button
+                  onClick={startListening}
+                  disabled={!sttSupported}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:opacity-95 disabled:opacity-50 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 cursor-pointer"
+                >
+                  <Mic className="w-4 h-4" /> Start Listening
+                </button>
+              ) : (
+                <button
+                  onClick={stopListening}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 cursor-pointer animate-pulse"
+                >
+                  <Square className="w-4 h-4" /> Stop Listening {isListening && '(listening...)'}
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                <Mic className="w-3.5 h-3.5 text-indigo-500" /> Speech Transcript
+              </label>
+              <textarea
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                placeholder="Your speech will appear here..."
+                rows={6}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none transition-all placeholder:text-slate-400 text-slate-800 dark:text-slate-200"
+              />
+            </div>
+
+            {transcript && (
               <button
-                onClick={startListening}
-                disabled={!sttSupported}
-                style={{ padding: '14px 32px', borderRadius: '8px', border: 'none', background: '#db2777', color: 'white', fontWeight: 'bold', cursor: sttSupported ? 'pointer' : 'not-allowed', fontSize: '15px', opacity: sttSupported ? 1 : 0.5 }}
+                onClick={copyTranscript}
+                className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
               >
-                🎤 Start Listening
-              </button>
-            ) : (
-              <button onClick={stopListening} style={{ padding: '14px 32px', borderRadius: '8px', border: 'none', background: '#dc2626', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
-                ⏹ Stop Listening {isListening && '(listening...)'}
+                <Copy className="w-3.5 h-3.5" /> Copy Transcript Text
               </button>
             )}
           </div>
-
-          <textarea
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            placeholder="Your speech will appear here..."
-            rows={6}
-            style={{ width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box', marginBottom: '15px', resize: 'vertical' }}
-          />
-
-          {transcript && (
-            <div style={{ textAlign: 'center' }}>
-              <button onClick={copyTranscript} style={{ padding: '10px 24px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>
-                📋 Copy Text
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import BackButton from '../BackButton';
+import { Calculator, FileText, ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react';
 
 interface Note {
   id: string;
@@ -9,7 +9,11 @@ interface Note {
   time: string;
 }
 
-export default function CalculatorTool({ onBack }: { onBack: () => void }) {
+interface CalculatorToolProps {
+  onBack?: () => void;
+}
+
+export default function CalculatorTool({ onBack }: CalculatorToolProps) {
   const [display, setDisplay] = useState<string>('0');
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNote, setCurrentNote] = useState<string>('');
@@ -36,7 +40,6 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
 
   const handleCalculate = () => {
     try {
-      // Safe math evaluation
       const sanitized = display.replace(/×/g, '*').replace(/÷/g, '/');
       const res = eval(sanitized);
       setDisplay(String(Number(res.toFixed(8))));
@@ -61,27 +64,52 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', maxWidth: '950px', margin: '0 auto' }}>
-      <BackButton onClick={onBack} />
+    <div className="max-w-6xl mx-auto space-y-6 pb-12 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Scientific Calculator &amp; Quick Notes
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-bold tracking-wider">
+                UTILITY
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Perform fast calculations and save quick notes or history instantly
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <h2 style={{ margin: '15px 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>🧮</span> Scientific Calculator & Quick Notes
-      </h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>
-        Perform fast calculations and save quick notes or history instantly.
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* Calculator Block */}
-        <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0,0,0,0.15)' }}>
-          {/* Display Display */}
-          <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', color: '#38bdf8', fontSize: '32px', fontWeight: 'bold', textAlign: 'right', marginBottom: '20px', minHeight: '40px', wordBreak: 'break-all' }}>
+        {/* Left Column: Calculator Block */}
+        <div className="lg:col-span-6 bg-slate-900 dark:bg-slate-950 p-6 rounded-3xl shadow-lg border border-slate-800 space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Calculator className="w-3.5 h-3.5 text-indigo-400" /> Calculator Display
+            </span>
+          </div>
+
+          {/* Screen Display */}
+          <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-sky-400 text-3xl font-mono font-bold text-right min-h-[70px] flex items-center justify-end break-all shadow-inner">
             {display}
           </div>
 
           {/* Keypad Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+          <div className="grid grid-cols-4 gap-2.5">
             {['C', '⌫', '(', ')'].map((btn) => (
               <button
                 key={btn}
@@ -90,7 +118,7 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
                   else if (btn === '⌫') handleDelete();
                   else handleBtnClick(btn);
                 }}
-                style={{ padding: '16px', fontSize: '18px', fontWeight: 'bold', borderRadius: '10px', border: 'none', background: '#334155', color: '#f8fafc', cursor: 'pointer' }}
+                className="py-4 text-base font-bold rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/50 transition-all cursor-pointer shadow-sm"
               >
                 {btn}
               </button>
@@ -100,7 +128,11 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
               <button
                 key={btn}
                 onClick={() => (btn === '÷' ? handleBtnClick('/') : handleBtnClick(btn))}
-                style={{ padding: '16px', fontSize: '18px', fontWeight: 'bold', borderRadius: '10px', border: 'none', background: btn === '÷' ? '#0284c7' : '#1e293b', color: '#ffffff', cursor: 'pointer' }}
+                className={`py-4 text-base font-bold rounded-2xl border transition-all cursor-pointer shadow-sm ${
+                  btn === '÷'
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-indigo-500/20'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-100 border-slate-700/50'
+                }`}
               >
                 {btn}
               </button>
@@ -110,7 +142,11 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
               <button
                 key={btn}
                 onClick={() => (btn === '×' ? handleBtnClick('*') : handleBtnClick(btn))}
-                style={{ padding: '16px', fontSize: '18px', fontWeight: 'bold', borderRadius: '10px', border: 'none', background: btn === '×' ? '#0284c7' : '#1e293b', color: '#ffffff', cursor: 'pointer' }}
+                className={`py-4 text-base font-bold rounded-2xl border transition-all cursor-pointer shadow-sm ${
+                  btn === '×'
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-indigo-500/20'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-100 border-slate-700/50'
+                }`}
               >
                 {btn}
               </button>
@@ -120,7 +156,11 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
               <button
                 key={btn}
                 onClick={() => handleBtnClick(btn)}
-                style={{ padding: '16px', fontSize: '18px', fontWeight: 'bold', borderRadius: '10px', border: 'none', background: btn === '-' ? '#0284c7' : '#1e293b', color: '#ffffff', cursor: 'pointer' }}
+                className={`py-4 text-base font-bold rounded-2xl border transition-all cursor-pointer shadow-sm ${
+                  btn === '-'
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-indigo-500/20'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-100 border-slate-700/50'
+                }`}
               >
                 {btn}
               </button>
@@ -133,7 +173,13 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
                   if (btn === '=') handleCalculate();
                   else handleBtnClick(btn);
                 }}
-                style={{ padding: '16px', fontSize: '18px', fontWeight: 'bold', borderRadius: '10px', border: 'none', background: btn === '=' ? '#16a34a' : btn === '+' ? '#0284c7' : '#1e293b', color: '#ffffff', cursor: 'pointer' }}
+                className={`py-4 text-base font-bold rounded-2xl border transition-all cursor-pointer shadow-sm ${
+                  btn === '='
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-emerald-600/20'
+                    : btn === '+'
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-indigo-500/20'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-100 border-slate-700/50'
+                }`}
               >
                 {btn}
               </button>
@@ -141,58 +187,58 @@ export default function CalculatorTool({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
-        {/* Notes Block */}
-        <div style={{ backgroundColor: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '18px' }}>📝 Quick Scratchpad & Notes</h3>
-          
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <input
-              type="text"
-              placeholder="Save calculation note..."
-              value={currentNote}
-              onChange={(e) => setCurrentNote(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
-              style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px' }}
-            />
-            <button
-              onClick={handleAddNote}
-              style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              Add
-            </button>
-          </div>
+        {/* Right Column: Notes Block */}
+        <div className="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[500px]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-indigo-500" /> Quick Scratchpad &amp; Notes
+              </span>
+            </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', maxHeight: '300px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {notes.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', marginTop: '30px' }}>No notes saved yet.</p>
-            ) : (
-              notes.map((note) => (
-                <div
-                  key={note.id}
-                  style={{
-                    backgroundColor: 'white',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div>
-                    <div style={{ color: '#1e293b', fontSize: '14px', fontWeight: '500' }}>{note.text}</div>
-                    <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{note.time}</div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteNote(note.id)}
-                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
-                  >
-                    ✕
-                  </button>
+            <div className="flex gap-2 mb-5">
+              <input
+                type="text"
+                placeholder="Save calculation note..."
+                value={currentNote}
+                onChange={(e) => setCurrentNote(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all placeholder:text-slate-400 text-slate-800 dark:text-slate-200"
+              />
+              <button
+                onClick={handleAddNote}
+                className="py-3 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Add
+              </button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto max-h-[340px] pr-1">
+              {notes.length === 0 ? (
+                <div className="text-center py-20 text-slate-400 space-y-2">
+                  <FileText className="w-10 h-10 mx-auto opacity-20" />
+                  <p className="text-xs">No notes saved yet.</p>
                 </div>
-              ))
-            )}
+              ) : (
+                notes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 flex justify-between items-center shadow-inner"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{note.text}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{note.time}</div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteNote(note.id)}
+                      className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

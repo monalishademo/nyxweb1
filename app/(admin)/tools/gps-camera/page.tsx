@@ -7,7 +7,6 @@ import { ArrowLeft, Camera, Clock, Download, Loader2, MapPin, RefreshCw, Search 
 import { canvasToJpeg, drawStamp, type StampData } from './stamp';
 import { flagUrlFor, reversePlace, searchPlaces, type PlaceHit } from './geo';
 
-// SSR Error এড়ানোর জন্য MapPicker ডাইনামিক ইমপোর্ট করা হলো
 const MapPicker = dynamic(() => import('./MapPicker'), { ssr: false });
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -135,9 +134,9 @@ export default function AdminGpsCameraPage() {
       try {
         const results = await searchPlaces(q);
         setHits(results);
-        if (results.length === 0) setSearchError('Kono jaiga paoa jayni');
+        if (results.length === 0) setSearchError('No location found.');
       } catch {
-        setSearchError('Search fail hoyeche, abar try koro');
+        setSearchError('Search failed, please try again.');
         setHits([]);
       } finally {
         setSearching(false);
@@ -209,7 +208,7 @@ export default function AdminGpsCameraPage() {
             Custom GPS Photo Stamp
           </h1>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-400">
-            Map e search koro ba pin drag koro. Lat/long auto asbe — tumi sudhu date/time dao.
+            Search for a location or drag the pin on the map. Coordinates will update automatically—just set your date and time.
           </p>
         </header>
 
@@ -220,7 +219,7 @@ export default function AdminGpsCameraPage() {
                 <div className="mb-4 rounded-2xl bg-emerald-500/15 p-4 text-emerald-400">
                   <Camera className="h-10 w-10" />
                 </div>
-                <div className="text-lg font-bold text-white">Photo upload koro</div>
+                <div className="text-lg font-bold text-white">Upload Photo</div>
                 <div className="mt-1 text-sm text-slate-400">JPG, PNG, WEBP</div>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
               </label>
@@ -230,12 +229,12 @@ export default function AdminGpsCameraPage() {
                   <canvas ref={canvasRef} className="mx-auto block max-h-[70vh] w-full object-contain rounded-xl" />
                   {!selected && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/45 px-6 text-center text-sm font-bold text-white">
-                      Map e jaiga select koro
+                      Please select a location on the map
                     </div>
                   )}
                   {busy && selected && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 text-xs font-bold text-white">
-                      Stamp render hocche...
+                      Rendering stamp...
                     </div>
                   )}
                 </div>
@@ -263,7 +262,7 @@ export default function AdminGpsCameraPage() {
           </section>
 
           <aside className="space-y-4 rounded-3xl border border-slate-800 bg-slate-950/70 p-5 shadow-2xl">
-            <Field label="Jaiga search">
+            <Field label="Search Location">
               <div className="relative">
                 <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
@@ -273,7 +272,7 @@ export default function AdminGpsCameraPage() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && hits[0]) applyPlace(hits[0]);
                   }}
-                  placeholder="Lalgarh, West Bengal"
+                  placeholder="e.g. Bankura, West Bengal"
                 />
                 {searching && (
                   <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-emerald-400" />
@@ -299,12 +298,13 @@ export default function AdminGpsCameraPage() {
               </div>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-slate-800 h-56">
+            {/* Map Preview Box - Height increased to h-[420px] for a large map view */}
+            <div className="overflow-hidden rounded-xl border border-slate-800 h-[420px] w-full">
               <MapPicker lat={mapLat} lon={mapLon} onPick={onMapPick} />
             </div>
             <p className="text-[11px] text-slate-500">
-              Map e click koro ba pin drag koro. Layers: Satellite / Hybrid / Map.
-              {geoBusy ? ' Address load hocche...' : ''}
+              Click on the map or drag the pin. Layers: Satellite / Hybrid / Map.
+              {geoBusy ? ' Loading address...' : ''}
             </p>
 
             {selected && (
@@ -336,7 +336,7 @@ export default function AdminGpsCameraPage() {
               </Field>
             </div>
 
-            <Field label="GMT offset">
+            <Field label="GMT Offset">
               <div className="relative">
                 <Clock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input

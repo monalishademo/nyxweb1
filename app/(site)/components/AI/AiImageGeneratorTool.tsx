@@ -40,10 +40,13 @@ export default function AiImageGeneratorTool({ onBack }: AiImageGeneratorProps) 
     const finalPrompt = `${baseText.trim()}, ${styleTag}`;
 
     try {
-      const res = await fetch('/api/ai-image-generator', {
+      const res = await fetch('/api/ai-hub', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: finalPrompt }),
+        body: JSON.stringify({ 
+          type: 'image', 
+          prompt: finalPrompt 
+        }),
       });
 
       const rawText = await res.text();

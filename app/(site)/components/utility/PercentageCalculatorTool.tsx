@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import BackButton from '../BackButton';
+import { Percent, ArrowLeft, TrendingUp, HelpCircle, SlidersHorizontal } from 'lucide-react';
 
 type Mode = 'basic' | 'whatPercent' | 'change';
 
-export default function PercentageCalculatorTool({ onBack }: { onBack: () => void }) {
+interface PercentageCalculatorProps {
+  onBack?: () => void;
+}
+
+export default function PercentageCalculatorTool({ onBack }: PercentageCalculatorProps) {
   const [mode, setMode] = useState<Mode>('basic');
 
   // Mode 1: X% of Y
@@ -42,117 +46,151 @@ export default function PercentageCalculatorTool({ onBack }: { onBack: () => voi
     return { pct: pct.toFixed(2), isIncrease: pct >= 0 };
   }, [oldValue, newValue]);
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '8px',
-    border: '1px solid #cbd5e1',
-    fontSize: '16px',
-    boxSizing: 'border-box',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: 'bold',
-    color: '#334155',
-    marginBottom: '6px',
-  };
-
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', maxWidth: '600px', margin: '0 auto' }}>
-      <BackButton onClick={onBack} />
-      <h2 style={{ margin: '15px 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>💯</span> Percentage Calculator
-      </h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>Three common percentage calculations, all in one tool.</p>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '25px' }}>
-        {([
-          ['basic', 'What is X% of Y?'],
-          ['whatPercent', 'X is what % of Y?'],
-          ['change', '% Change from X to Y'],
-        ] as [Mode, string][]).map(([m, label]) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: mode === m ? '2px solid #0d9488' : '1px solid #cbd5e1',
-              background: mode === m ? '#f0fdfa' : 'white',
-              color: '#0f172a',
-              fontWeight: mode === m ? 'bold' : 'normal',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '15px',
-            }}
-          >
-            {label}
-          </button>
-        ))}
+    <div className="max-w-6xl mx-auto space-y-6 pb-12 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Percentage Calculator
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-bold tracking-wider">
+                UTILITY
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Three common percentage calculations, all in one tool
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '25px' }}>
-        {mode === 'basic' && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-              <div>
-                <label style={labelStyle}>Percentage (%)</label>
-                <input type="number" value={basicPercent} onChange={(e) => setBasicPercent(e.target.value)} style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Of Value</label>
-                <input type="number" value={basicValue} onChange={(e) => setBasicValue(e.target.value)} style={inputStyle} />
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '15px', background: '#f0fdfa', borderRadius: '8px', border: '2px solid #0d9488' }}>
-              <span style={{ color: '#64748b', fontSize: '14px' }}>{basicPercent}% of {basicValue} is</span>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>{basicResult || '—'}</div>
-            </div>
-          </>
-        )}
+      {/* Main Container */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl mx-auto">
+        
+        {/* Mode Switcher Tabs */}
+        <div className="flex flex-col sm:flex-row gap-2 bg-slate-50 dark:bg-slate-950/50 p-2 rounded-2xl border border-slate-200 dark:border-slate-800">
+          {[
+            ['basic', 'What is X% of Y?', Percent],
+            ['whatPercent', 'X is what % of Y?', HelpCircle],
+            ['change', '% Change from X to Y', TrendingUp],
+          ].map(([m, label, Icon]: any) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`flex-1 py-3 px-4 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                mode === m
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
 
-        {mode === 'whatPercent' && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-              <div>
-                <label style={labelStyle}>Part (X)</label>
-                <input type="number" value={partValue} onChange={(e) => setPartValue(e.target.value)} style={inputStyle} />
+        {/* Calculator Body Panel */}
+        <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          {mode === 'basic' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Percentage (%)</label>
+                  <input
+                    type="number"
+                    value={basicPercent}
+                    onChange={(e) => setBasicPercent(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Of Value</label>
+                  <input
+                    type="number"
+                    value={basicValue}
+                    onChange={(e) => setBasicValue(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={labelStyle}>Whole (Y)</label>
-                <input type="number" value={wholeValue} onChange={(e) => setWholeValue(e.target.value)} style={inputStyle} />
+              <div className="text-center p-6 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 space-y-1 shadow-inner">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{basicPercent}% of {basicValue} is</span>
+                <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{basicResult || '—'}</div>
               </div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '15px', background: '#f0fdfa', borderRadius: '8px', border: '2px solid #0d9488' }}>
-              <span style={{ color: '#64748b', fontSize: '14px' }}>{partValue} is</span>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>{whatPercentResult ? `${whatPercentResult}%` : '—'}</div>
-              <span style={{ color: '#64748b', fontSize: '14px' }}>of {wholeValue}</span>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {mode === 'change' && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-              <div>
-                <label style={labelStyle}>Old Value (X)</label>
-                <input type="number" value={oldValue} onChange={(e) => setOldValue(e.target.value)} style={inputStyle} />
+          {mode === 'whatPercent' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Part (X)</label>
+                  <input
+                    type="number"
+                    value={partValue}
+                    onChange={(e) => setPartValue(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Whole (Y)</label>
+                  <input
+                    type="number"
+                    value={wholeValue}
+                    onChange={(e) => setWholeValue(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={labelStyle}>New Value (Y)</label>
-                <input type="number" value={newValue} onChange={(e) => setNewValue(e.target.value)} style={inputStyle} />
+              <div className="text-center p-6 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-900/50 space-y-1 shadow-inner">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{partValue} is</span>
+                <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{whatPercentResult ? `${whatPercentResult}%` : '—'}</div>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">of {wholeValue}</span>
               </div>
-            </div>
-            <div style={{ textAlign: 'center', padding: '15px', background: changeResult?.isIncrease ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `2px solid ${changeResult?.isIncrease ? '#16a34a' : '#dc2626'}` }}>
-              <span style={{ color: '#64748b', fontSize: '14px' }}>{changeResult?.isIncrease ? 'Increase' : 'Decrease'} of</span>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: changeResult?.isIncrease ? '#15803d' : '#b91c1c' }}>
-                {changeResult ? `${changeResult.isIncrease ? '+' : ''}${changeResult.pct}%` : '—'}
+            </>
+          )}
+
+          {mode === 'change' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Old Value (X)</label>
+                  <input
+                    type="number"
+                    value={oldValue}
+                    onChange={(e) => setOldValue(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">New Value (Y)</label>
+                  <input
+                    type="number"
+                    value={newValue}
+                    onChange={(e) => setNewValue(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
-            </div>
-          </>
-        )}
+              <div className={`text-center p-6 rounded-2xl border space-y-1 shadow-inner ${changeResult?.isIncrease ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400'}`}>
+                <span className="text-xs font-semibold">{changeResult?.isIncrease ? 'Increase' : 'Decrease'} of</span>
+                <div className="text-3xl font-black">
+                  {changeResult ? `${changeResult.isIncrease ? '+' : ''}${changeResult.pct}%` : '—'}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

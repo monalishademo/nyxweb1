@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { QrCode, Download, ArrowLeft, Wifi, Link2, Palette, Sliders } from 'lucide-react';
 import QRCode from 'qrcode';
-import BackButton from '../BackButton';
 
-export default function QrGeneratorTool({ onBack }: { onBack: () => void }) {
+interface QrGeneratorProps {
+  onBack?: () => void;
+}
+
+export default function QrGeneratorTool({ onBack }: QrGeneratorProps) {
   const [qrType, setQrType] = useState<'url' | 'wifi' | 'text'>('url');
   const [text, setText] = useState<string>('https://google.com');
   const [wifiSsid, setWifiSsid] = useState<string>('');
   const [wifiPassword, setWifiPassword] = useState<string>('');
   const [wifiSecurity, setWifiSecurity] = useState<string>('WPA');
 
-  const [fgColor, setFgColor] = useState<string>('#000000');
+  const [fgColor, setFgColor] = useState<string>('#0f172a');
   const [bgColor, setBgColor] = useState<string>('#ffffff');
   const [size, setSize] = useState<number>(256);
   const [errorCorrection, setErrorCorrection] = useState<'L' | 'M' | 'Q' | 'H'>('H');
@@ -52,129 +56,183 @@ export default function QrGeneratorTool({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div style={{ background: 'white', padding: '35px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', maxWidth: '950px', margin: '0 auto' }}>
-      <BackButton onClick={onBack} />
-
-      <h2 style={{ margin: '15px 0 10px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span>📲</span> Advanced Studio QR Generator
-      </h2>
-      <p style={{ color: '#64748b', marginBottom: '25px' }}>
-        Generate custom QR codes with custom styling, Wi-Fi presets, and high-resolution PNG download.
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
-        
-        {/* Controls */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
-          {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+    <div className="max-w-6xl mx-auto space-y-6 pb-12 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {onBack && (
             <button
-              onClick={() => setQrType('url')}
-              style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: qrType === 'url' ? '#2563eb' : '#f8fafc', color: qrType === 'url' ? 'white' : '#334155', fontWeight: 'bold', cursor: 'pointer' }}
+              onClick={onBack}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
             >
-              🔗 URL / Text
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            <button
-              onClick={() => setQrType('wifi')}
-              style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: qrType === 'wifi' ? '#2563eb' : '#f8fafc', color: qrType === 'wifi' ? 'white' : '#334155', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              📶 Wi-Fi QR
-            </button>
-          </div>
-
-          {qrType === 'url' ? (
-            <div>
-              <label style={{ display: 'block', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', fontSize: '14px' }}>Input Content / URL</label>
-              <textarea
-                rows={3}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Type link or any text..."
-                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
-              />
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <input
-                type="text"
-                placeholder="Wi-Fi Name (SSID)"
-                value={wifiSsid}
-                onChange={(e) => setWifiSsid(e.target.value)}
-                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-              />
-              <input
-                type="password"
-                placeholder="Wi-Fi Password"
-                value={wifiPassword}
-                onChange={(e) => setWifiPassword(e.target.value)}
-                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-              />
-            </div>
           )}
-
-          {/* Color Selectors */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div>
-              <label style={{ display: 'block', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', fontSize: '14px' }}>🎨 QR Code Color</label>
-              <input
-                type="color"
-                value={fgColor}
-                onChange={(e) => setFgColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px', fontSize: '14px' }}>🖼️ Background Color</label>
-              <input
-                type="color"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-              />
-            </div>
-          </div>
-
-          {/* Resolution Slider */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '14px' }}>📐 Size</label>
-              <span style={{ fontWeight: 'bold', color: '#2563eb', fontSize: '14px' }}>{size}px</span>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Advanced Studio QR Generator
+              </h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 font-bold tracking-wider">
+                UTILITY
+              </span>
             </div>
-            <input
-              type="range"
-              min="128"
-              max="512"
-              step="32"
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              style={{ width: '100%' }}
-            />
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+              Generate custom QR codes with styling, Wi-Fi presets, and high-resolution PNG download
+            </p>
           </div>
+        </div>
+      </div>
 
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column Controls */}
+        <div className="lg:col-span-6 space-y-5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-5">
+            
+            {/* Category Tabs */}
+            <div className="flex bg-slate-50 dark:bg-slate-950/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <button
+                onClick={() => setQrType('url')}
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  qrType === 'url'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Link2 className="w-3.5 h-3.5" /> URL / Text
+              </button>
+              <button
+                onClick={() => setQrType('wifi')}
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  qrType === 'wifi'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Wifi className="w-3.5 h-3.5" /> Wi-Fi QR
+              </button>
+            </div>
+
+            {qrType === 'url' ? (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <QrCode className="w-3.5 h-3.5 text-indigo-500" /> Input Content / URL *
+                </label>
+                <textarea
+                  rows={3}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Type link or any text..."
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none transition-all placeholder:text-slate-400 text-slate-800 dark:text-slate-200"
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Wi-Fi Name (SSID)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. MyHome_WiFi"
+                    value={wifiSsid}
+                    onChange={(e) => setWifiSsid(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Wi-Fi Password</label>
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={wifiPassword}
+                    onChange={(e) => setWifiPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Color Selectors */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <Palette className="w-3.5 h-3.5 text-indigo-500" /> QR Color
+                </label>
+                <input
+                  type="color"
+                  value={fgColor}
+                  onChange={(e) => setFgColor(e.target.value)}
+                  className="w-full h-11 p-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <Palette className="w-3.5 h-3.5 text-indigo-500" /> BG Color
+                </label>
+                <input
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-full h-11 p-1 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Resolution Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-500" /> Resolution Size
+                </label>
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{size}px</span>
+              </div>
+              <input
+                type="range"
+                min="128"
+                max="512"
+                step="32"
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                className="w-full accent-indigo-600 cursor-pointer"
+              />
+            </div>
+
+          </div>
         </div>
 
-        {/* Live Preview */}
-        <div style={{ backgroundColor: '#f8fafc', padding: '25px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h3 style={{ margin: '0 0 20px 0', color: '#1e293b', fontSize: '18px' }}>🔍 Live Preview</h3>
-          {qrDataUrl ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ padding: '16px', background: bgColor, borderRadius: '12px', border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                <img src={qrDataUrl} alt="QR Code" style={{ width: `${Math.min(size, 240)}px`, height: `${Math.min(size, 240)}px` }} />
+        {/* Right Column Live Preview */}
+        <div className="lg:col-span-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm min-h-[460px] flex flex-col justify-between items-center text-center relative overflow-hidden">
+            <div className="w-full">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-6">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Live Preview
+                </span>
               </div>
-              <div style={{ marginTop: '20px' }}>
-                <a
-                  href={qrDataUrl}
-                  download="qrcode.png"
-                  style={{ display: 'inline-block', backgroundColor: '#16a34a', color: 'white', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none' }}
-                >
-                  ⬇️ Download PNG Image
-                </a>
-              </div>
+
+              {qrDataUrl ? (
+                <div className="flex flex-col items-center justify-center space-y-6 py-4">
+                  <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 inline-block shadow-inner" style={{ background: bgColor }}>
+                    <img src={qrDataUrl} alt="QR Code" className="max-w-[220px] max-h-[220px] object-contain" />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-slate-400 py-20 text-xs">Fill input details to preview...</div>
+              )}
             </div>
-          ) : (
-            <div style={{ color: '#94a3b8' }}>Fill input details to preview...</div>
-          )}
+
+            {qrDataUrl && (
+              <a
+                href={qrDataUrl}
+                download="qrcode.png"
+                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:opacity-95 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 cursor-pointer mt-6"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download PNG Image</span>
+              </a>
+            )}
+          </div>
         </div>
 
       </div>
