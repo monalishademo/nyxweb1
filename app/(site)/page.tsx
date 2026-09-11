@@ -20,8 +20,11 @@ const UnlockPdfTool = dynamic<any>(() => import('./components/pdf/UnlockPdfTool'
 const CompressPdfTool = dynamic<any>(() => import('./components/pdf/CompressPdfTool'), { ssr: false });
 const ImageToTextOcrTool = dynamic<any>(() => import('./components/AI/ImageToTextOcrTool'), { ssr: false });
 
-// --- Excel Tool Dynamic Import ---
-const AbcPulseBatchCreateTool = dynamic<any>(() => import('./components/excel/AbcPulseBatchCreateTool'), { ssr: false });
+// --- NYX Mind Search / Chat Tool Dynamic Import ---
+const NyxMindSearch = dynamic<any>(() => import('./components/NYX MIND/NyxMindSearch'), { ssr: false });
+
+// --- Network & Security Tools Dynamic Import ---
+const InternetHealthTool = dynamic<any>(() => import('./components/Network & Security/InternetHealthTool'), { ssr: false });
 
 // --- Regular AI Tools Imports ---
 import AiImageGeneratorTool from './components/AI/AiImageGeneratorTool';
@@ -192,7 +195,12 @@ export default function Home() {
           {/* 1. Dashboard */}
           {!selectedTool && <Dashboard onSelectTool={setSelectedTool} />}
 
-          {/* 2. AI Tools */}
+          {/* 2. NYX Mind AI Chat Page */}
+          {selectedTool === 'nyx-mind-chat' && (
+            <NyxMindSearch onBack={handleBackToDashboard} />
+          )}
+
+          {/* 3. AI Tools */}
           {selectedTool === 'ai-image-generator' && (
             <AiImageGeneratorTool onBack={handleBackToDashboard} />
           )}
@@ -218,14 +226,14 @@ export default function Home() {
             <ResumeCoverLetterTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 3. Image Tools */}
+          {/* 4. Image Tools */}
           {selectedTool === 'compress-image' && <ImageCompressorTool />}
           {selectedTool === 'bg-remove' && (
             <BgRemoverTool onBack={handleBackToDashboard} />
           )}
           {selectedTool === 'passport-photo' && <PassportPhotoTool />}
 
-          {/* 4. PDF Tools */}
+          {/* 5. PDF Tools */}
           {selectedTool === 'merge-pdf' && (
             <MergePdfTool pdfjs={pdfjs} onBack={handleBackToDashboard} />
           )}
@@ -251,7 +259,7 @@ export default function Home() {
             <CompressPdfTool pdfjs={pdfjs} onBack={handleBackToDashboard} />
           )}
 
-          {/* 5. Convert Tools */}
+          {/* 6. Convert Tools */}
           {selectedTool === 'universal-converter' && (
             <UniversalConverterTool
               pdfjs={pdfjs}
@@ -265,7 +273,12 @@ export default function Home() {
             <UnitConverterTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 6. Utility Tools */}
+          {/* 7. Network & Security Tools */}
+          {selectedTool === 'internet-health' && (
+            <InternetHealthTool onBack={handleBackToDashboard} />
+          )}
+
+          {/* 8. Utility Tools */}
           {selectedTool === 'world-clock' && (
             <WorldClockTool onBack={handleBackToDashboard} />
           )}
@@ -289,11 +302,6 @@ export default function Home() {
           )}
           {selectedTool === 'age-calculator' && (
             <AgeCalculatorTool onBack={handleBackToDashboard} />
-          )}
-
-          {/* 7. Excel Tools */}
-          {selectedTool === 'abc-pulse-batch-create' && (
-            <AbcPulseBatchCreateTool onBack={handleBackToDashboard} />
           )}
         </main>
       </div>
