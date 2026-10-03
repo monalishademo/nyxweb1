@@ -226,7 +226,9 @@ export default function Home() {
           )}
 
           {/* 3. Image Tools */}
-          {selectedTool === 'compress-image' && <ImageCompressorTool />}
+          {selectedTool === 'compress-image' && (
+            <ImageCompressorTool onBack={handleBackToDashboard} />
+          )}
           {selectedTool === 'bg-remove' && (
             <BgRemoverTool onBack={handleBackToDashboard} />
           )}
