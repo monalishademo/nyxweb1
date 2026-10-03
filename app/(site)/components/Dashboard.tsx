@@ -48,16 +48,6 @@ interface DashboardProps {
 
 export default function Dashboard({ onSelectTool }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [nyxPrompt, setNyxPrompt] = useState('');
-
-  const handleNyxSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nyxPrompt.trim()) return;
-    
-    // ইউজার যা লিখবে তা লোকালস্টোরেজে সেভ করে বা সরাসরি এআই চ্যাট পেজে পাঠিয়ে দেওয়া
-    localStorage.setItem('nyx_initial_prompt', nyxPrompt);
-    onSelectTool('nyx-mind-chat');
-  };
 
   const categories = [
     {
@@ -183,35 +173,6 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
         <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 font-normal max-w-xl mx-auto leading-relaxed">
           Welcome to <strong className="font-semibold text-slate-900 dark:text-white tracking-wider">NYX WEB ONE</strong> — Fast, secure, and privacy-focused web utilities right in your browser.
         </p>
-
-        {/* Small Compact Ask NYX Mind Box */}
-        <div className="pt-1 max-w-lg mx-auto">
-          <form 
-            onSubmit={handleNyxSubmit}
-            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-3 py-2 shadow-md dark:shadow-xl flex items-center gap-2 focus-within:border-indigo-500 transition-all text-left"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 ml-1" />
-            <input
-              type="text"
-              value={nyxPrompt}
-              onChange={(e) => setNyxPrompt(e.target.value)}
-              placeholder="Ask NYX Mind..."
-              className="w-full bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-xs sm:text-sm px-1"
-            />
-            <div className="flex items-center gap-1 shrink-0">
-              <button type="button" className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Attach file">
-                <Paperclip className="w-4 h-4" />
-              </button>
-              <button
-                type="submit"
-                disabled={!nyxPrompt.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white p-1.5 rounded-xl transition-all flex items-center justify-center shadow-xs cursor-pointer"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </form>
-        </div>
 
         {/* Original Tool Search Bar */}
         <div className="pt-2 max-w-lg mx-auto relative">

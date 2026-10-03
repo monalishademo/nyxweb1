@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 interface ImageCompressorProps {
-  onBack?: () => void;
+  onBack: () => void;
 }
 
 export default function ImageCompressorTool({ onBack }: ImageCompressorProps) {
@@ -112,7 +113,7 @@ export default function ImageCompressorTool({ onBack }: ImageCompressorProps) {
       setCompressedPreviewUrl(URL.createObjectURL(resultFile));
     } catch (error) {
       console.error("Compression Error:", error);
-      alert("Compression করতে সমস্যা হয়েছে!");
+      alert("Compression করতে সমস্যা হয়েছে!");
     } finally {
       setIsCompressing(false);
     }
@@ -137,14 +138,24 @@ export default function ImageCompressorTool({ onBack }: ImageCompressorProps) {
       margin: '0 auto',
       color: '#1e293b'
     }}>
-      {/* Header Info */}
-      <div style={{ marginBottom: '25px' }}>
-        <h2 style={{ fontSize: '26px', fontWeight: 'bold', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '10px', color: '#0f172a' }}>
-          <span>🗜️</span> Compress Image Size
-        </h2>
-        <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
-          Compress images to exact target size in KB (e.g., under 50 KB, 20 KB).
-        </p>
+      {/* Top Header with Back Icon */}
+      <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm mb-6">
+        <button
+          onClick={onBack}
+          className="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 transition-all cursor-pointer"
+          title="Back to Dashboard"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            Compress Image Size
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 font-sans">MEDIA TOOL</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Compress images to exact target size in KB (e.g., under 50 KB, 20 KB).
+          </p>
+        </div>
       </div>
 
       {/* Upload Zone */}

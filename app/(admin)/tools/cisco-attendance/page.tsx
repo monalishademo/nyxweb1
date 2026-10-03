@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import { ArrowLeft, Printer, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Printer, UploadCloud, Download } from 'lucide-react';
 
 interface Student {
   sno: number;
@@ -97,14 +97,31 @@ export default function CiscoAttendancePage() {
     reader.readAsBinaryString(file);
   };
 
+  const downloadTemplate = () => {
+    const templateData = [
+      {
+        'Student Name': '',
+        'Gender': '',
+        'Age': '',
+        'Guardians Name': '',
+        'Mobile Number': '',
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, 'NYX CISCO NON LMS BLANK.xlsx');
+  };
+
   const studentPages = chunkStudents(students, ROWS_PER_PAGE);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-3 text-slate-100 print:bg-white print:p-0">
+    <div className="min-h-screen bg-slate-950 p-3 text-slate-100 print:min-h-0 print:bg-white print:p-0">
       
       {/* Back Button and Controls Container */}
       <div className="print:hidden mx-auto mb-3 max-w-[1280px]">
-        <div className="mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-800 hover:text-white"
@@ -112,6 +129,15 @@ export default function CiscoAttendancePage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Link>
+
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700 bg-emerald-900/50 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-800 hover:text-white"
+          >
+            <Download className="h-4 w-4" />
+            Download Excel Template
+          </button>
         </div>
 
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-3">
@@ -291,15 +317,23 @@ export default function CiscoAttendancePage() {
       <style>{`
         .cisco-sheets { zoom: 1.18; }
         .cisco-sheet {
-          width: 11in;
-          min-height: 8.5in;
+          width: 297mm;
+          min-height: 210mm;
           background: #fff;
           color: #000;
-          padding: 0.13in 0.3in 0.18in 0.43in;
+          padding: 4mm 6mm 4mm 8mm;
           margin: 0 auto 24px;
+          box-sizing: border-box;
           box-shadow: 0 12px 28px rgba(0,0,0,0.4);
-          font-family: Arial, Helvetica, sans-serif;
+          font-family: Cambria, Georgia, 'Times New Roman', serif;
           font-synthesis: none;
+        }
+        .cisco-sheet table,
+        .cisco-sheet td,
+        .cisco-sheet th,
+        .cisco-sheet div,
+        .cisco-sheet p {
+          font-family: Cambria, Georgia, 'Times New Roman', serif !important;
         }
         .cisco-sheet table {
           width: 100%;
@@ -335,15 +369,23 @@ export default function CiscoAttendancePage() {
         .cisco-label,
         .cisco-value {
           font-size: 7.33pt;
-          font-weight: 700;
           height: 17.4pt;
           text-align: left;
-          white-space: nowrap;
           padding: 0 3px;
+        }
+        .cisco-label {
+          font-weight: 700;
+          white-space: nowrap;
+        }
+        .cisco-value {
+          font-weight: 400;
+          white-space: normal;
+          word-break: normal;
+          overflow-wrap: anywhere;
+          line-height: 8pt;
         }
         .cisco-head th {
           background: #d9d9d9 !important;
-          font-family: Verdana, Arial, sans-serif;
           font-size: 7.33pt;
           font-weight: 700;
           height: 14pt;
@@ -355,20 +397,21 @@ export default function CiscoAttendancePage() {
         .cisco-row td {
           height: 13.92pt;
           font-size: 7.33pt;
-          font-weight: 700;
+          font-weight: 400;
           padding: 0 4px;
+          white-space: nowrap;
         }
         .cisco-c { text-align: center; }
         .cisco-l { text-align: left; }
         .cisco-below {
           position: relative;
           width: 100%;
-          height: 128pt;
+          height: 102pt;
         }
         .cisco-sig-trainer,
         .cisco-sig-coord {
           position: absolute;
-          top: 21.5pt;
+          top: 8pt;
           font-size: 7.33pt;
           font-weight: 700;
           color: #000;
@@ -381,17 +424,17 @@ export default function CiscoAttendancePage() {
         }
         .cisco-sig-line-t { width: 74.6pt; }
         .cisco-sig-line-c { width: 160.8pt; }
-        .cisco-sig-name { margin-top: 11.2pt; font-size: 7.33pt; font-weight: 700; }
+        .cisco-sig-name { margin-top: 9pt; font-size: 7.33pt; font-weight: 700; }
         .cisco-notes-left {
           position: absolute;
           left: 1.5pt;
-          top: 64.8pt;
+          top: 42pt;
           width: 41.4%;
         }
         .cisco-notes-right {
           position: absolute;
           left: 67.75%;
-          top: 64.8pt;
+          top: 42pt;
           width: 32%;
         }
         .cisco-notes-title {
@@ -399,46 +442,56 @@ export default function CiscoAttendancePage() {
           font-weight: 700;
           font-style: italic;
           text-transform: uppercase;
-          margin-bottom: 3.2pt;
+          margin-bottom: 2pt;
           color: #000;
         }
         .cisco-decl {
           font-size: 6.13pt;
           font-style: italic;
-          line-height: 7.56pt;
+          line-height: 7.2pt;
           color: #000;
         }
         .cisco-inst {
           font-size: 6.13pt;
           font-style: italic;
-          line-height: 8.88pt;
+          line-height: 8.2pt;
           color: #000;
           padding-left: 7.4pt;
         }
+
         @media print {
-          body {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: #fff !important;
             color: #000 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-          .cisco-sheets { zoom: 1; display: block; }
+          .cisco-sheets {
+            zoom: 1;
+            display: block !important;
+            overflow: visible !important;
+          }
           .cisco-sheet {
             box-shadow: none;
             margin: 0;
-            padding: 0;
-            width: 100%;
-            min-height: auto;
+            padding: 3mm 8mm;
+            width: 297mm;
+            height: 209mm;
+            min-height: 0;
+            box-sizing: border-box;
             page-break-after: always;
             break-after: page;
+            break-inside: avoid;
           }
           .cisco-sheet:last-child {
             page-break-after: auto;
             break-after: auto;
           }
           @page {
-            size: letter landscape;
-            margin: 0.12in 0.28in 0.18in 0.4in;
+            size: A4 landscape;
+            margin: 0;
           }
         }
       `}</style>

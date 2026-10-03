@@ -20,11 +20,15 @@ const UnlockPdfTool = dynamic<any>(() => import('./components/pdf/UnlockPdfTool'
 const CompressPdfTool = dynamic<any>(() => import('./components/pdf/CompressPdfTool'), { ssr: false });
 const ImageToTextOcrTool = dynamic<any>(() => import('./components/AI/ImageToTextOcrTool'), { ssr: false });
 
-// --- NYX Mind Search / Chat Tool Dynamic Import ---
-const NyxMindSearch = dynamic<any>(() => import('./components/NYX MIND/NyxMindSearch'), { ssr: false });
-
 // --- Network & Security Tools Dynamic Import ---
 const InternetHealthTool = dynamic<any>(() => import('./components/Network & Security/InternetHealthTool'), { ssr: false });
+const DeviceFingerprintTool = dynamic<any>(() => import('./components/Network & Security/DeviceFingerprintTool'), { ssr: false });
+const SslCheckerTool = dynamic<any>(() => import('./components/Network & Security/SslCheckerTool'), { ssr: false });
+const UrlEncoderTool = dynamic<any>(() => import('./components/Network & Security/UrlEncoderTool'), { ssr: false });
+const DnsLookupTool = dynamic<any>(() => import('./components/Network & Security/DnsLookupTool'), { ssr: false });
+const PasswordGeneratorTool = dynamic<any>(() => import('./components/Network & Security/PasswordGeneratorTool'), { ssr: false });
+const PortCheckerTool = dynamic<any>(() => import('./components/Network & Security/PortCheckerTool'), { ssr: false });
+const HeaderInspectorTool = dynamic<any>(() => import('./components/Network & Security/HeaderInspectorTool'), { ssr: false });
 
 // --- Regular AI Tools Imports ---
 import AiImageGeneratorTool from './components/AI/AiImageGeneratorTool';
@@ -195,12 +199,7 @@ export default function Home() {
           {/* 1. Dashboard */}
           {!selectedTool && <Dashboard onSelectTool={setSelectedTool} />}
 
-          {/* 2. NYX Mind AI Chat Page */}
-          {selectedTool === 'nyx-mind-chat' && (
-            <NyxMindSearch onBack={handleBackToDashboard} />
-          )}
-
-          {/* 3. AI Tools */}
+          {/* 2. AI Tools */}
           {selectedTool === 'ai-image-generator' && (
             <AiImageGeneratorTool onBack={handleBackToDashboard} />
           )}
@@ -226,14 +225,14 @@ export default function Home() {
             <ResumeCoverLetterTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 4. Image Tools */}
+          {/* 3. Image Tools */}
           {selectedTool === 'compress-image' && <ImageCompressorTool />}
           {selectedTool === 'bg-remove' && (
             <BgRemoverTool onBack={handleBackToDashboard} />
           )}
           {selectedTool === 'passport-photo' && <PassportPhotoTool />}
 
-          {/* 5. PDF Tools */}
+          {/* 4. PDF Tools */}
           {selectedTool === 'merge-pdf' && (
             <MergePdfTool pdfjs={pdfjs} onBack={handleBackToDashboard} />
           )}
@@ -259,7 +258,7 @@ export default function Home() {
             <CompressPdfTool pdfjs={pdfjs} onBack={handleBackToDashboard} />
           )}
 
-          {/* 6. Convert Tools */}
+          {/* 5. Convert Tools */}
           {selectedTool === 'universal-converter' && (
             <UniversalConverterTool
               pdfjs={pdfjs}
@@ -273,12 +272,33 @@ export default function Home() {
             <UnitConverterTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 7. Network & Security Tools */}
+          {/* 6. Network & Security Tools */}
           {selectedTool === 'internet-health' && (
             <InternetHealthTool onBack={handleBackToDashboard} />
           )}
+          {selectedTool === 'device-fingerprint' && (
+            <DeviceFingerprintTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'ssl-checker' && (
+            <SslCheckerTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'url-encoder' && (
+            <UrlEncoderTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'dns-lookup' && (
+            <DnsLookupTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'password-generator' && (
+            <PasswordGeneratorTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'port-checker' && (
+            <PortCheckerTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'header-inspector' && (
+            <HeaderInspectorTool onBack={handleBackToDashboard} />
+          )}
 
-          {/* 8. Utility Tools */}
+          {/* 7. Utility Tools */}
           {selectedTool === 'world-clock' && (
             <WorldClockTool onBack={handleBackToDashboard} />
           )}
