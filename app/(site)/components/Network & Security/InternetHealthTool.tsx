@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Activity, Globe, Wifi, Shield, RefreshCw, Download, Upload, CheckCircle2, Cpu, Clock, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Activity, Globe, Shield, RefreshCw, Cpu, Clock } from 'lucide-react';
 
 interface InternetHealthToolProps {
   onBack?: () => void;
@@ -17,7 +17,7 @@ interface IpInfo {
 
 interface HistoryItem {
   time: string;
-  speed: string;
+  status: string;
 }
 
 export default function InternetHealthTool({ onBack }: InternetHealthToolProps) {
@@ -26,11 +26,7 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
   
   // Results State
   const [healthScore, setHealthScore] = useState<number | null>(null);
-  const [downloadSpeed, setDownloadSpeed] = useState<string>('0.00');
-  const [uploadSpeed, setUploadSpeed] = useState<string>('0.00');
   const [ping, setPing] = useState<number | null>(null);
-  const [jitter, setJitter] = useState<string>('0.0');
-  const [packetLoss, setPacketLoss] = useState<string>('0.0');
   
   // IP & Network Identity
   const [ipv4, setIpv4] = useState<string>('Detecting...');
@@ -98,10 +94,10 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
     }
   }, []);
 
-  // Main Health Check Execution
+  // Main Health Check Execution (Latency & Reachability)
   const runHealthCheck = async () => {
     setTesting(true);
-    setProgress(15);
+    setProgress(25);
 
     try {
       const pings: number[] = [];
@@ -113,10 +109,7 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
       }
       const avgPing = Math.round(pings.reduce((a, b) => a + b, 0) / pings.length);
       setPing(avgPing);
-      
-      const calculatedJitter = Math.abs(pings[1] - pings[0]).toFixed(1);
-      setJitter(calculatedJitter);
-      setProgress(40);
+      setProgress(60);
 
       const sites = {
         Google: 'https://www.google.com/favicon.ico',
@@ -135,36 +128,16 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
         }
       }
       setConnectivity(connResults);
-      setProgress(65);
-
-      const dlStart = performance.now();
-      const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace?' + Math.random(), { cache: 'no-store' });
-      const blob = await res.blob();
-      const dlEnd = performance.now();
-      
-      const durationSec = (dlEnd - dlStart) / 1000;
-      const bits = (blob.size || 1500) * 8 * 50;
-      const speedMbps = ((bits / durationSec) / (1024 * 1024)).toFixed(2);
-      const finalDl = Math.max(Number(speedMbps), 18.5).toFixed(2);
-      setDownloadSpeed(finalDl);
-
-      const finalUl = (Number(finalDl) * 0.48).toFixed(2);
-      setUploadSpeed(finalUl);
-
-      const calculatedLoss = avgPing > 150 ? '2.1' : '0.0';
-      setPacketLoss(calculatedLoss);
       setProgress(90);
 
       let score = 100;
-      if (avgPing > 80) score -= 15;
-      if (avgPing > 150) score -= 25;
-      if (Number(calculatedJitter) > 20) score -= 10;
-      if (Number(finalDl) < 15) score -= 15;
-      score = Math.max(score, 40);
+      if (avgPing > 80) score -= 20;
+      if (avgPing > 150) score -= 35;
+      score = Math.max(score, 50);
       setHealthScore(score);
 
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const newHistoryItem = { time: timeStr, speed: `${finalDl} Mbps` };
+      const newHistoryItem = { time: timeStr, status: `${avgPing} ms Latency` };
       const updatedHistory = [newHistoryItem, ...history.slice(0, 3)];
       setHistory(updatedHistory);
       localStorage.setItem('nyx_net_history', JSON.stringify(updatedHistory));
@@ -184,24 +157,12 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
     return { text: 'Average', color: 'text-amber-500' };
   };
 
-  const getDownloadRating = (speed: string) => {
-    const s = Number(speed);
-    if (s > 50) return 'Excellent';
-    if (s > 25) return 'Good';
-    if (s > 10) return 'Average';
-    return 'Slow';
-  };
-
-  const avgHistorySpeed = history.length > 0 
-    ? (history.reduce((acc, curr) => acc + parseFloat(curr.speed), 0) / history.length).toFixed(1)
-    : '0';
-
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12 font-sans animate-fadeIn">
       {/* Main Outer Card Container */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
         
-        {/* Top Header - Unchanged design as requested */}
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-6">
           <div className="flex items-center gap-3.5">
             {onBack && (
@@ -222,7 +183,7 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                Analyze your connection speed, latency, packet stability, and service reachability.
+                Analyze your connection latency, stability, DNS connectivity, and service reachability.
               </p>
             </div>
           </div>
@@ -251,7 +212,7 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
         {healthScore !== null && (
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Overall Internet Health</span>
+              <span className="text-[11px] uppercase tracking-widest text-slate-400 font-bold">Overall Connection Health</span>
               <h3 className="text-lg font-black text-slate-900 dark:text-white">
                 {healthScore >= 80 ? '🟢 Excellent & Stable' : '🟠 Fair Connection'}
               </h3>
@@ -263,37 +224,11 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
           </div>
         )}
 
-        {/* Core Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Core Latency & Status Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><Download className="w-3.5 h-3.5 text-indigo-500" /> Download</span>
-              <span className="text-[10px] text-indigo-500 font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60">
-                {getDownloadRating(downloadSpeed)}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{downloadSpeed}</span>
-              <span className="text-xs font-bold text-slate-400">Mbps</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><Upload className="w-3.5 h-3.5 text-emerald-500" /> Upload</span>
-              <span className="text-[10px] text-emerald-500 font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60">
-                {getDownloadRating(uploadSpeed)}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1 pt-1">
-              <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{uploadSpeed}</span>
-              <span className="text-xs font-bold text-slate-400">Mbps</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-500" /> Ping</span>
+              <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-sky-500" /> Latency (Ping)</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 ${getPingRating(ping).color}`}>
                 {getPingRating(ping).text}
               </span>
@@ -303,21 +238,17 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
               <span className="text-xs font-bold text-slate-400">ms</span>
             </div>
           </div>
-        </div>
 
-        {/* Secondary Metrics Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Jitter Stability</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{jitter} ms</span>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Packet Loss</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{packetLoss}%</span>
-          </div>
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">DNS Connectivity</span>
-            <span className="font-bold text-emerald-500">✓ Working</span>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-emerald-500" /> DNS Connectivity</span>
+              <span className="text-[10px] text-emerald-500 font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60">
+                Active
+              </span>
+            </div>
+            <div className="flex items-baseline gap-1 pt-1">
+              <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">Working</span>
+            </div>
           </div>
         </div>
 
@@ -401,15 +332,14 @@ export default function InternetHealthTool({ onBack }: InternetHealthToolProps) 
           <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-indigo-500" /> Today's History
+                <Clock className="w-3.5 h-3.5 text-indigo-500" /> Today's Check History
               </h4>
-              <span className="text-xs font-semibold text-slate-500">Average: <strong className="text-indigo-500">{avgHistorySpeed} Mbps</strong></span>
             </div>
             <div className="flex flex-wrap gap-2.5">
               {history.map((item, idx) => (
                 <div key={idx} className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-2 text-xs font-mono">
                   <span className="text-slate-400">{item.time}</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">{item.speed}</span>
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">{item.status}</span>
                 </div>
               ))}
             </div>

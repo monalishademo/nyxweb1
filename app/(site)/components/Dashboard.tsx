@@ -38,8 +38,9 @@ import {
   Shield,
   Key,
   Wifi,
-  Paperclip,
-  Mic
+  Award,
+  Palette,
+  Layers
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -97,6 +98,19 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
       ],
     },
     {
+      title: 'Design Tools',
+      description: 'Create professional certificates and graphics instantly.',
+      badge: 'Creative',
+      barColor: 'from-purple-500 to-pink-600',
+      iconBg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
+      tools: [
+        { id: 'certificate-generator', name: 'Bulk Certificate Generator', icon: Award },
+        { id: 'bulk-id-card', name: 'Bulk ID Card Generator', icon: Palette },
+        { id: 'collage-maker', name: 'Photo Collage Maker', icon: ImageIcon },
+        { id: 'text-behind-image', name: 'Text Behind Image Effect', icon: Layers },
+      ],
+    },
+    {
       title: 'Image Tools',
       description: 'Edit, clean, resize and process photos in browser.',
       badge: 'Media',
@@ -106,6 +120,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
         { id: 'passport-photo', name: 'Passport Photo Creator', icon: Camera },
         { id: 'bg-remove', name: 'AI Background Remover', icon: ImageIcon },
         { id: 'compress-image', name: 'Compress Image Size', icon: Minimize2 },
+        { id: 'batch-watermark', name: 'Batch Image Watermark', icon: Stamp },
       ],
     },
     {
@@ -174,7 +189,7 @@ export default function Dashboard({ onSelectTool }: DashboardProps) {
           Welcome to <strong className="font-semibold text-slate-900 dark:text-white tracking-wider">NYX WEB ONE</strong> — Fast, secure, and privacy-focused web utilities right in your browser.
         </p>
 
-        {/* Original Tool Search Bar */}
+        {/* Search Bar */}
         <div className="pt-2 max-w-lg mx-auto relative">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 absolute left-4 text-slate-400 pointer-events-none" />

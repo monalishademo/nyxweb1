@@ -20,6 +20,15 @@ const UnlockPdfTool = dynamic<any>(() => import('./components/pdf/UnlockPdfTool'
 const CompressPdfTool = dynamic<any>(() => import('./components/pdf/CompressPdfTool'), { ssr: false });
 const ImageToTextOcrTool = dynamic<any>(() => import('./components/AI/ImageToTextOcrTool'), { ssr: false });
 
+// --- Design Tools Dynamic Import ---
+const CertificateGeneratorTool = dynamic<any>(() => import('./components/Design/CertificateGeneratorTool'), { ssr: false });
+const BulkIdCardGenerator = dynamic<any>(() => import('./components/Design/BulkIdCardGenerator'), { ssr: false });
+const CollageMakerTool = dynamic<any>(() => import('./components/Design/CollageMakerTool'), { ssr: false });
+const TextBehindImageTool = dynamic<any>(() => import('./components/Design/TextBehindImageTool'), { ssr: false });
+
+// --- Image Tools Dynamic Import ---
+const BatchWatermarkTool = dynamic<any>(() => import('./components/image/BatchWatermarkTool'), { ssr: false });
+
 // --- Network & Security Tools Dynamic Import ---
 const InternetHealthTool = dynamic<any>(() => import('./components/Network & Security/InternetHealthTool'), { ssr: false });
 const DeviceFingerprintTool = dynamic<any>(() => import('./components/Network & Security/DeviceFingerprintTool'), { ssr: false });
@@ -233,6 +242,9 @@ export default function Home() {
             <BgRemoverTool onBack={handleBackToDashboard} />
           )}
           {selectedTool === 'passport-photo' && <PassportPhotoTool />}
+          {selectedTool === 'batch-watermark' && (
+            <BatchWatermarkTool onBack={handleBackToDashboard} />
+          )}
 
           {/* 4. PDF Tools */}
           {selectedTool === 'merge-pdf' && (
@@ -274,7 +286,21 @@ export default function Home() {
             <UnitConverterTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 6. Network & Security Tools */}
+          {/* 6. Design Tools */}
+          {selectedTool === 'certificate-generator' && (
+            <CertificateGeneratorTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'bulk-id-card' && (
+            <BulkIdCardGenerator onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'collage-maker' && (
+            <CollageMakerTool onBack={handleBackToDashboard} />
+          )}
+          {selectedTool === 'text-behind-image' && (
+            <TextBehindImageTool onBack={handleBackToDashboard} />
+          )}
+
+          {/* 7. Network & Security Tools */}
           {selectedTool === 'internet-health' && (
             <InternetHealthTool onBack={handleBackToDashboard} />
           )}
@@ -300,7 +326,7 @@ export default function Home() {
             <HeaderInspectorTool onBack={handleBackToDashboard} />
           )}
 
-          {/* 7. Utility Tools */}
+          {/* 8. Utility Tools */}
           {selectedTool === 'world-clock' && (
             <WorldClockTool onBack={handleBackToDashboard} />
           )}

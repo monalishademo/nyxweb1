@@ -21,6 +21,7 @@
     "fast-xml-parser": "^5.10.1",
     "gifenc": "^1.0.3",
     "groq-sdk": "^1.4.1",
+    "html-to-image": "^1.11.13",
     "html2pdf.js": "^0.14.0",
     "imagetracerjs": "^1.2.6",
     "js-yaml": "^5.2.3",
