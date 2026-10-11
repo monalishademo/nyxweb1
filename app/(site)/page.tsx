@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Sun, Moon, Calendar, Clock, Heart } from 'lucide-react';
 import Dashboard from './components/Dashboard';
+import RadioPlayer from './components/RadioPlayer';
 
 // --- Dynamic Imports (SSR False to prevent DOMMatrix/Canvas/XLSX Errors) ---
 const UniversalConverterTool = dynamic<any>(() => import('./components/convert/UniversalConverterTool'), { ssr: false });
@@ -175,6 +176,9 @@ export default function Home() {
               >
                 Dashboard
               </button>
+
+              {/* Dynamic Indian Radio Player Widget */}
+              <RadioPlayer />
 
               {/* Admin Zone Link */}
               <Link

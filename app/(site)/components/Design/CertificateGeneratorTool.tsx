@@ -13,56 +13,50 @@ import {
   Ruler,
   FileText,
   X,
+  ShieldCheck,
+  Sparkles,
+  QrCode,
+  Users,
+  FileSpreadsheet,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
-type Props = {
-  onBack: () => void;
-};
-
+type Props = { onBack: () => void };
 type Template =
-  | 'classic'
-  | 'modern'
-  | 'elegant'
-  | 'minimal'
-  | 'academic'
-  | 'corporate'
-  | 'cyber'
-  | 'appreciation'
-  | 'royal'
-  | 'neon'
-  | 'sunset'
-  | 'emerald';
-
+  | 'canva_modern' | 'canva_classic' | 'canva_royal' | 'canva_geometric'
+  | 'canva_minimal' | 'canva_corporate' | 'canva_cyber' | 'canva_sunset'
+  | 'canva_emerald' | 'canva_neon' | 'canva_creative' | 'canva_diploma';
 type Unit = 'mm' | 'cm' | 'in' | 'px';
+type ImageAsset = { name: string; data: string };
 
-type ImageAsset = {
-  name: string;
-  data: string;
+type BulkRow = {
+  recipient: string;
+  course: string;
+  certificateId: string;
+  date: string;
 };
 
 const templates: { id: Template; name: string; description: string }[] = [
-  { id: 'classic', name: 'Classic Gold', description: 'Traditional gold border' },
-  { id: 'modern', name: 'Modern Blue', description: 'Clean blue corporate style' },
-  { id: 'elegant', name: 'Elegant', description: 'Premium decorative frame' },
-  { id: 'minimal', name: 'Minimal', description: 'Simple and clean' },
-  { id: 'academic', name: 'Academic', description: 'School and college' },
-  { id: 'corporate', name: 'Corporate', description: 'Professional training' },
-  { id: 'cyber', name: 'Cyber Security', description: 'Technology themed' },
-  { id: 'appreciation', name: 'Appreciation', description: 'Recognition and awards' },
-  { id: 'royal', name: 'Royal Crest', description: 'Regal and prestigious badge look' },
-  { id: 'neon', name: 'Neon Tech', description: 'Vibrant futuristic style' },
-  { id: 'sunset', name: 'Sunset Glow', description: 'Warm and inspiring gradient feel' },
-  { id: 'emerald', name: 'Emerald Luxury', description: 'Sophisticated deep green layout' },
+  { id: 'canva_modern', name: 'Modern Split', description: 'Left color accent bar with clean typography' },
+  { id: 'canva_classic', name: 'Classic Gold', description: 'Traditional frame with corner flourishes' },
+  { id: 'canva_royal', name: 'Royal Badge', description: 'Prestigious layout with official emblem space' },
+  { id: 'canva_geometric', name: 'Geometric Pro', description: 'Diagonal modern shapes & tech vibe' },
+  { id: 'canva_minimal', name: 'Minimal Luxe', description: 'Clean whitespace & sophisticated lines' },
+  { id: 'canva_corporate', name: 'Executive Dark', description: 'Professional dark border with highlights' },
+  { id: 'canva_cyber', name: 'Cyber Tech', description: 'Futuristic grid lines and sharp contrast' },
+  { id: 'canva_sunset', name: 'Sunset Gradient', description: 'Warm vibrant gradient background feel' },
+  { id: 'canva_emerald', name: 'Emerald Prestige', description: 'Deep rich green luxury template' },
+  { id: 'canva_neon', name: 'Neon Future', description: 'Vibrant glowing border & modern badge' },
+  { id: 'canva_creative', name: 'Creative Studio', description: 'Artistic header blocks and bold layout' },
+  { id: 'canva_diploma', name: 'Academic Diploma', description: 'Formal institutional certificate look' },
 ];
 
 const paperSizes: Record<string, { width: number; height: number }> = {
   'A4 Landscape': { width: 297, height: 210 },
   'A4 Portrait': { width: 210, height: 297 },
   'A3 Landscape': { width: 420, height: 297 },
-  'A3 Portrait': { width: 297, height: 420 },
   'US Letter Landscape': { width: 279.4, height: 215.9 },
-  'US Letter Portrait': { width: 215.9, height: 279.4 },
-  'Legal Landscape': { width: 355.6, height: 215.9 },
 };
 
 const colorOptions = [
@@ -71,46 +65,64 @@ const colorOptions = [
   { name: 'Gold', value: '#b8860b' },
   { name: 'Purple', value: '#6d28d9' },
   { name: 'Maroon', value: '#991b1b' },
-  { name: 'Black', value: '#222222' },
+  { name: 'Charcoal', value: '#1e293b' },
   { name: 'Teal', value: '#0f766e' },
-  { name: 'Navy', value: '#17365d' },
+  { name: 'Rose', value: '#e11d48' },
 ];
 
 const defaultValues = {
-  organization: 'YOUR ORGANIZATION',
+  organization: 'GLOBAL ACADEMY OF EXCELLENCE',
   title: 'CERTIFICATE OF ACHIEVEMENT',
-  subtitle: 'This certificate is proudly presented to',
-  recipient: 'Recipient Name',
-  description: 'For successfully completing the training programme',
-  course: 'Course / Programme Name',
-  date: '',
-  certificateId: 'NYX-2026-0001',
-  signatory: 'Authorized Signatory',
-  signatoryRole: 'Programme Coordinator',
+  subtitle: 'This is proudly presented to',
+  description: 'For successfully completing the advanced professional training programme.',
+  signatory: 'Dr. Alok Mukherjee',
+  signatoryRole: 'Director of Education',
   font: 'Georgia',
-  fontSize: 30,
-  recipientSize: 36,
+  fontSize: 32,
+  recipientSize: 40,
+  watermarkText: 'VERIFIED CERTIFICATE',
 };
 
+const sampleBulkData: BulkRow[] = [
+  { recipient: 'Jane Doe', course: 'Cybersecurity Awareness Training', certificateId: 'NYX-2026-001', date: '2026-10-12' },
+  { recipient: 'John Smith', course: 'Advanced Web Development Masterclass', certificateId: 'NYX-2026-002', date: '2026-10-12' },
+  { recipient: 'Alex Johnson', course: 'Python Data Processing & Automation', certificateId: 'NYX-2026-003', date: '2026-10-12' },
+];
+
 export default function CertificateGeneratorTool({ onBack }: Props) {
-  const [template, setTemplate] = useState<Template>('classic');
-  const [accent, setAccent] = useState('#b8860b');
+  const [template, setTemplate] = useState<Template>('canva_modern');
+  const [accent, setAccent] = useState('#1d4ed8');
   const [paper, setPaper] = useState('A4 Landscape');
   const [unit, setUnit] = useState<Unit>('mm');
-  const [customWidth, setCustomWidth] = useState('297');
-  const [customHeight, setCustomHeight] = useState('210');
 
   const [values, setValues] = useState(defaultValues);
   const [logo, setLogo] = useState<ImageAsset | null>(null);
   const [photo, setPhoto] = useState<ImageAsset | null>(null);
   const [signature, setSignature] = useState<ImageAsset | null>(null);
   const [background, setBackground] = useState<ImageAsset | null>(null);
+
+  // Bulk State
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkData, setBulkData] = useState<BulkRow[]>(sampleBulkData);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Single mode fallback values
+  const [singleRecipient, setSingleRecipient] = useState('Jane Doe');
+  const [singleCourse, setSingleCourse] = useState('Cybersecurity & Web Development Masterclass');
+  const [singleId, setSingleId] = useState('NYX-2026-9981');
+  const [singleDate, setSingleDate] = useState('');
+
+  // Toggles
   const [showCertificateId, setShowCertificateId] = useState(true);
   const [showDate, setShowDate] = useState(true);
   const [showPhoto, setShowPhoto] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
   const [showSignature, setShowSignature] = useState(true);
-  const [borderStyle, setBorderStyle] = useState('double');
+  const [showBadge, setShowBadge] = useState(true);
+  const [showQrCode, setShowQrCode] = useState(true);
+  const [showWatermark, setShowWatermark] = useState(true);
+  const [borderStyle, setBorderStyle] = useState('solid');
+
   const [activeTab, setActiveTab] = useState('content');
   const [notice, setNotice] = useState('');
 
@@ -118,243 +130,170 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
   const photoInput = useRef<HTMLInputElement>(null);
   const signatureInput = useRef<HTMLInputElement>(null);
   const backgroundInput = useRef<HTMLInputElement>(null);
+  const csvInput = useRef<HTMLInputElement>(null);
 
-  const update = (key: keyof typeof defaultValues, value: string | number) => {
-    setValues((previous) => ({ ...previous, [key]: value }));
-  };
+  const update = (key: keyof typeof defaultValues, val: string | number) =>
+    setValues((prev) => ({ ...prev, [key]: val }));
 
-  const dimensions =
-    paper === 'Custom Size'
-      ? {
-          width: Math.max(1, Number(customWidth) || 297),
-          height: Math.max(1, Number(customHeight) || 210),
-        }
-      : paperSizes[paper] || paperSizes['A4 Landscape'];
+  const dimensions = paper === 'Custom Size' 
+    ? { width: 297, height: 210 }
+    : paperSizes[paper] || paperSizes['A4 Landscape'];
 
   const aspectRatio = dimensions.width / dimensions.height;
   const printWidth = `${dimensions.width}${unit}`;
   const printHeight = `${dimensions.height}${unit}`;
 
-  const uploadImage = (
-    file: File | undefined,
-    setter: (asset: ImageAsset | null) => void,
-  ) => {
+  // Current active certificate details depending on mode
+  const activeRecipient = isBulkMode && bulkData.length > 0 ? bulkData[currentIndex].recipient : singleRecipient;
+  const activeCourse = isBulkMode && bulkData.length > 0 ? bulkData[currentIndex].course : singleCourse;
+  const activeId = isBulkMode && bulkData.length > 0 ? bulkData[currentIndex].certificateId : singleId;
+  const rawDate = isBulkMode && bulkData.length > 0 ? bulkData[currentIndex].date : singleDate;
+
+  const formattedDate = rawDate
+    ? new Date(rawDate + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '12 October 2026';
+
+  const uploadImage = (file: File | undefined, setter: (a: ImageAsset | null) => void) => {
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setNotice('Please select an image file.');
-      return;
-    }
-
-    if (file.size > 8 * 1024 * 1024) {
-      setNotice('Image size must be 8 MB or less.');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { setNotice('Please select an image file.'); return; }
     const reader = new FileReader();
-
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setter({ name: file.name, data: reader.result });
         setNotice(`${file.name} uploaded successfully.`);
       }
     };
-
-    reader.onerror = () => setNotice('Could not read this image.');
     reader.readAsDataURL(file);
   };
 
+  // Handle CSV / Excel simulated import
+  const handleBulkUpload = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+      const lines = text.split('\n');
+      const parsedRows: BulkRow[] = [];
+      
+      // Skip header row if matches name/course
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',');
+        if (row.length >= 2 && row[0].trim() !== '') {
+          parsedRows.push({
+            recipient: row[0]?.trim() || 'Attendee Name',
+            course: row[1]?.trim() || 'Professional Training',
+            certificateId: row[2]?.trim() || `NYX-2026-00${i}`,
+            date: row[3]?.trim() || '',
+          });
+        }
+      }
+
+      if (parsedRows.length > 0) {
+        setBulkData(parsedRows);
+        setCurrentIndex(0);
+        setIsBulkMode(true);
+        setNotice(`Successfully loaded ${parsedRows.length} recipients for Bulk generation!`);
+      } else {
+        setNotice('Could not parse rows. Ensure format is: Name, Course, ID, Date');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Download Sample CSV template for Bulk import
+  const downloadSampleCsv = () => {
+    const csvContent = "data:text/csv;charset=utf-8,Recipient Name,Course Name,Certificate ID,Date\nJohn Doe,Cybersecurity Essentials,NYX-001,2026-10-12\nSarah Connor,Web Development Masterclass,NYX-002,2026-10-12";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "certificate_bulk_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const resetAll = () => {
-    setTemplate('classic');
-    setAccent('#b8860b');
-    setPaper('A4 Landscape');
-    setUnit('mm');
-    setCustomWidth('297');
-    setCustomHeight('210');
-    setValues(defaultValues);
-    setLogo(null);
-    setPhoto(null);
-    setSignature(null);
-    setBackground(null);
-    setShowCertificateId(true);
-    setShowDate(true);
-    setShowPhoto(true);
-    setShowLogo(true);
-    setShowSignature(true);
-    setBorderStyle('double');
-    setNotice('Design has been reset.');
+    setTemplate('canva_modern'); setAccent('#1d4ed8'); setPaper('A4 Landscape');
+    setValues(defaultValues); setLogo(null); setPhoto(null); setSignature(null); setBackground(null);
+    setIsBulkMode(false);
+    setNotice('Design reset successfully.');
   };
-
-  const handlePrint = () => {
-    setNotice('In the print dialog, choose Save as PDF for a PDF file.');
-    window.print();
-  };
-
-  const formattedDate = values.date
-    ? new Date(values.date + 'T12:00:00').toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : 'Date of completion';
-
-  const frameClass =
-    template === 'classic' || template === 'elegant' || template === 'royal'
-      ? 'double'
-      : template === 'modern' || template === 'cyber' || template === 'neon'
-        ? 'solid'
-        : 'simple';
-
-  const effectiveBorder = borderStyle === 'auto' ? frameClass : borderStyle;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <style>{`
-        @page {
-          size: ${printWidth} ${printHeight};
-          margin: 0;
-        }
-
+        @page { size: ${printWidth} ${printHeight}; margin: 0; }
         @media print {
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: ${printWidth} !important;
-            height: ${printHeight} !important;
-            background: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          body * {
-            visibility: hidden !important;
-          }
-
-          #certificate-print-area,
-          #certificate-print-area * {
-            visibility: visible !important;
-          }
-
-          #certificate-print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: ${printWidth} !important;
-            height: ${printHeight} !important;
-            max-width: none !important;
-            aspect-ratio: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-          }
-
-          #certificate-print-area .certificate-inner {
-            box-sizing: border-box !important;
-            width: 100% !important;
-            height: 100% !important;
-          }
-
-          .no-print {
-            display: none !important;
-          }
+          html, body { width: ${printWidth} !important; height: ${printHeight} !important; background: white !important; -webkit-print-color-adjust: exact !important; }
+          body * { visibility: hidden !important; }
+          #certificate-print-area, #certificate-print-area * { visibility: visible !important; }
+          #certificate-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: ${printWidth} !important; height: ${printHeight} !important; box-shadow: none !important; }
+          .no-print { display: none !important; }
         }
       `}</style>
 
       {/* Header */}
-      <header className="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 md:px-6">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Go back"
-              className="rounded-xl border border-slate-200 p-2 hover:bg-slate-100"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <Award size={22} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold sm:text-xl">Certificate Studio</h1>
-              <p className="text-xs text-slate-500">
-                Design, customize and print certificates
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={resetAll}
-              className="hidden items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 sm:flex"
-            >
-              <RotateCcw size={16} />
-              Reset
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:px-4"
-            >
-              <Download size={16} />
-              Export PDF
-            </button>
-          </div>
+      <header className="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 md:px-6 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="rounded-xl border border-slate-200 p-2 hover:bg-slate-100 transition"><ArrowLeft size={20} /></button>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow"><Award size={22} /></div>
+          <div><h1 className="text-lg font-bold">Pro Certificate Studio</h1><p className="text-xs text-slate-500">Canva Editor with Bulk CSV / Excel Import</p></div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={resetAll} className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 transition"><RotateCcw size={16} /> Reset</button>
+          <button onClick={() => window.print()} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"><Download size={16} /> Export PDF / Print</button>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-[1600px] grid-cols-1 gap-5 p-4 md:p-6 xl:grid-cols-[390px_minmax(0,1fr)]">
-        {/* Editor */}
+      <main className="mx-auto grid max-w-[1600px] grid-cols-1 gap-5 p-4 md:p-6 xl:grid-cols-[410px_minmax(0,1fr)]">
+        {/* Sidebar */}
         <aside className="no-print space-y-4">
-          {/* Templates */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Palette size={18} className="text-indigo-600" />
-              <h2 className="font-bold">Certificate designs</h2>
+          
+          {/* Bulk Generation Card */}
+          <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2"><Users size={18} className="text-indigo-600" /><h3 className="font-bold text-sm text-indigo-900">Bulk Create Mode</h3></div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isBulkMode ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{isBulkMode ? `${bulkData.length} Loaded` : 'Single Mode'}</span>
+            </div>
+            <p className="text-xs text-slate-600 mb-3">Upload a CSV or Excel export to generate multiple certificates automatically.</p>
+            
+            <div className="flex gap-2">
+              <button onClick={downloadSampleCsv} className="flex-1 flex items-center justify-center gap-1 bg-white border border-indigo-200 py-1.5 px-2 rounded-xl text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition">
+                <FileSpreadsheet size={14} /> Sample CSV
+              </button>
+              <input ref={csvInput} type="file" accept=".csv,.txt" className="hidden" onChange={(e) => handleBulkUpload(e.target.files?.[0])} />
+              <button onClick={() => csvInput.current?.click()} className="flex-1 flex items-center justify-center gap-1 bg-indigo-600 py-1.5 px-2 rounded-xl text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-xs">
+                <Upload size={14} /> Upload Data
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
-              {templates.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => setTemplate(item.id)}
-                  className={`rounded-xl border p-3 text-left transition ${
-                    template === item.id
-                      ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-300'
-                      : 'border-slate-200 hover:border-slate-400'
-                  }`}
-                >
-                  <div
-                    className="mb-2 flex h-12 items-center justify-center rounded-md bg-white"
-                    style={{
-                      border:
-                        item.id === 'minimal'
-                          ? '1px solid #e2e8f0'
-                          : `3px ${['classic', 'elegant', 'royal'].includes(item.id) ? 'double' : 'solid'} ${accent}`,
-                    }}
-                  >
-                    <Award size={20} style={{ color: accent }} />
+            {isBulkMode && (
+              <div className="mt-3 pt-3 border-t border-indigo-200 flex items-center justify-between text-xs">
+                <button onClick={() => { setIsBulkMode(false); setNotice('Switched to Single Mode'); }} className="text-indigo-700 underline font-semibold">Exit Bulk Mode</button>
+                <span className="text-slate-600 font-mono">Record {currentIndex + 1} of {bulkData.length}</span>
+              </div>
+            )}
+          </section>
+
+          {/* Templates */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2"><Sparkles size={18} className="text-indigo-600" /><h2 className="font-bold text-sm">Templates ({templates.length})</h2></div>
+            <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
+              {templates.map((t) => (
+                <button key={t.id} onClick={() => setTemplate(t.id)} className={`rounded-xl border p-2 text-left transition ${template === t.id ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <div className="mb-1 h-5 rounded bg-white border flex items-center justify-center" style={{ borderLeft: t.id === 'canva_modern' ? `4px solid ${accent}` : undefined }}>
+                    <Award size={13} style={{ color: accent }} />
                   </div>
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-semibold">{item.name}</span>
-                    {template === item.id && (
-                      <Check size={15} className="text-indigo-600" />
-                    )}
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                  <span className="text-[11px] font-bold truncate block">{t.name}</span>
                 </button>
               ))}
             </div>
           </section>
 
-          {/* Editor tabs */}
+          {/* Editor Tabs */}
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid grid-cols-3 border-b border-slate-200">
+            <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50">
               {[
                 { id: 'content', label: 'Content', icon: FileText },
                 { id: 'design', label: 'Design', icon: Palette },
@@ -362,689 +301,225 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
               ].map((tab) => {
                 const Icon = tab.icon;
                 return (
-                  <button
-                    type="button"
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center justify-center gap-1.5 px-2 py-3 text-sm font-semibold ${
-                      activeTab === tab.id
-                        ? 'border-b-2 border-indigo-600 bg-indigo-50 text-indigo-700'
-                        : 'text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {tab.label}
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold ${activeTab === tab.id ? 'border-b-2 border-indigo-600 bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:bg-slate-100'}`}>
+                    <Icon size={15} /> {tab.label}
                   </button>
                 );
               })}
             </div>
 
-            <div className="space-y-4 p-4">
+            <div className="space-y-4 p-4 max-h-[340px] overflow-y-auto">
               {activeTab === 'content' && (
                 <>
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Organization name
-                    </label>
-                    <input
-                      value={values.organization}
-                      onChange={(e) => update('organization', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      placeholder="Organization or institute"
-                    />
-                  </div>
+                  <div><label className="text-xs font-semibold text-slate-600">Organization Name</label><input value={values.organization} onChange={(e) => update('organization', e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div><label className="text-xs font-semibold text-slate-600">Certificate Title</label><input value={values.title} onChange={(e) => update('title', e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div><label className="text-xs font-semibold text-slate-600">Subtitle</label><input value={values.subtitle} onChange={(e) => update('subtitle', e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /></div>
 
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Certificate title
-                    </label>
-                    <input
-                      value={values.title}
-                      onChange={(e) => update('title', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      placeholder="Certificate of Completion"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Subtitle
-                    </label>
-                    <input
-                      value={values.subtitle}
-                      onChange={(e) => update('subtitle', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Recipient name
-                    </label>
-                    <input
-                      value={values.recipient}
-                      onChange={(e) => update('recipient', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500"
-                      placeholder="Student or recipient name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Description
-                    </label>
-                    <textarea
-                      value={values.description}
-                      onChange={(e) => update('description', e.target.value)}
-                      rows={2}
-                      className="w-full resize-y rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Course / programme
-                    </label>
-                    <input
-                      value={values.course}
-                      onChange={(e) => update('course', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-semibold">
-                        Completion date
-                      </label>
-                      <input
-                        type="date"
-                        value={values.date}
-                        onChange={(e) => update('date', e.target.value)}
-                        className="w-full min-w-0 rounded-xl border border-slate-300 px-2 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      />
+                  {!isBulkMode ? (
+                    <>
+                      <div><label className="text-xs font-semibold text-slate-600">Recipient Name (Single)</label><input value={singleRecipient} onChange={(e) => setSingleRecipient(e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold outline-none focus:border-indigo-500" /></div>
+                      <div><label className="text-xs font-semibold text-slate-600">Course / Programme</label><input value={singleCourse} onChange={(e) => setSingleCourse(e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><label className="text-xs font-semibold text-slate-600">Date</label><input type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} className="w-full rounded-xl border border-slate-300 px-2 py-2 text-sm" /></div>
+                        <div><label className="text-xs font-semibold text-slate-600">ID</label><input value={singleId} onChange={(e) => setSingleId(e.target.value)} className="w-full rounded-xl border border-slate-300 px-2 py-2 text-sm" /></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                      <strong>Bulk Mode Active:</strong> Recipient names, courses, and IDs are automatically mapped from your uploaded file. Use the navigation buttons in the preview to browse records.
                     </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-semibold">
-                        Certificate ID
-                      </label>
-                      <input
-                        value={values.certificateId}
-                        onChange={(e) => update('certificateId', e.target.value)}
-                        className="w-full min-w-0 rounded-xl border border-slate-300 px-2 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-sm font-semibold">
-                        Signatory name
-                      </label>
-                      <input
-                        value={values.signatory}
-                        onChange={(e) => update('signatory', e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-semibold">
-                        Signatory role
-                      </label>
-                      <input
-                        value={values.signatoryRole}
-                        onChange={(e) => update('signatoryRole', e.target.value)}
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
-                      />
-                    </div>
+                  <div><label className="text-xs font-semibold text-slate-600">Description Text</label><textarea value={values.description} onChange={(e) => update('description', e.target.value)} rows={2} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><label className="text-xs font-semibold text-slate-600">Signatory Name</label><input value={values.signatory} onChange={(e) => update('signatory', e.target.value)} className="w-full rounded-xl border border-slate-300 px-2 py-2 text-sm" /></div>
+                    <div><label className="text-xs font-semibold text-slate-600">Signatory Role</label><input value={values.signatoryRole} onChange={(e) => update('signatoryRole', e.target.value)} className="w-full rounded-xl border border-slate-300 px-2 py-2 text-sm" /></div>
                   </div>
                 </>
               )}
 
               {activeTab === 'design' && (
-                <>
+                <div className="space-y-4">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold">
-                      Accent color
-                    </label>
-                    <div className="flex flex-wrap gap-3">
-                      {colorOptions.map((color) => (
-                        <button
-                          type="button"
-                          key={color.value}
-                          onClick={() => setAccent(color.value)}
-                          title={color.name}
-                          aria-label={color.name}
-                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${
-                            accent === color.value
-                              ? 'border-slate-900 ring-2 ring-slate-300'
-                              : 'border-white'
-                          }`}
-                          style={{ backgroundColor: color.value }}
-                        >
-                          {accent === color.value && (
-                            <Check size={17} className="text-white" />
-                          )}
-                        </button>
+                    <label className="text-xs font-semibold block mb-2 text-slate-600">Accent Color Theme</label>
+                    <div className="flex flex-wrap gap-2">
+                      {colorOptions.map((c) => (
+                        <button key={c.value} onClick={() => setAccent(c.value)} className={`h-8 w-8 rounded-full border-2 transition ${accent === c.value ? 'scale-110 border-slate-900 ring-2 ring-indigo-200' : 'border-white shadow'}`} style={{ backgroundColor: c.value }} />
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Font family
-                    </label>
-                    <select
-                      value={values.font}
-                      onChange={(e) => update('font', e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                    >
-                      <option value="Georgia">Georgia — Classic</option>
-                      <option value="Arial">Arial — Clean</option>
-                      <option value="Verdana">Verdana — Modern</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Trebuchet MS">Trebuchet MS</option>
-                      <option value="Tahoma">Tahoma</option>
-                    </select>
-                  </div>
+                  <div><label className="text-xs font-semibold text-slate-600">Typography Font</label><select value={values.font} onChange={(e) => update('font', e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="Georgia">Georgia (Serif)</option><option value="Arial">Arial (Sans)</option><option value="Times New Roman">Times New Roman</option><option value="Verdana">Verdana</option></select></div>
+                  <div><label className="text-xs font-semibold text-slate-600">Border Style</label><select value={borderStyle} onChange={(e) => setBorderStyle(e.target.value)} className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="solid">Solid Frame</option><option value="double">Double Frame</option><option value="dashed">Dashed Elegant</option></select></div>
+                  <div><div className="flex justify-between text-xs font-semibold text-slate-600 mb-1"><span>Title Size</span><span>{values.fontSize}px</span></div><input type="range" min="20" max="48" value={values.fontSize} onChange={(e) => update('fontSize', Number(e.target.value))} className="w-full accent-indigo-600" /></div>
+                  <div><div className="flex justify-between text-xs font-semibold text-slate-600 mb-1"><span>Recipient Size</span><span>{values.recipientSize}px</span></div><input type="range" min="24" max="56" value={values.recipientSize} onChange={(e) => update('recipientSize', Number(e.target.value))} className="w-full accent-indigo-600" /></div>
 
-                  <div>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label className="text-sm font-semibold">Title size</label>
-                      <span className="text-xs text-slate-500">
-                        {values.fontSize}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="18"
-                      max="48"
-                      value={values.fontSize}
-                      onChange={(e) => update('fontSize', Number(e.target.value))}
-                      className="w-full accent-indigo-600"
-                    />
+                  <div className="space-y-2 border-t pt-3 text-xs font-medium text-slate-700">
+                    <label className="flex items-center justify-between cursor-pointer"><span>Show Logo</span> <input type="checkbox" checked={showLogo} onChange={(e) => setShowLogo(e.target.checked)} className="accent-indigo-600 h-4 w-4" /></label>
+                    <label className="flex items-center justify-between cursor-pointer"><span>Show Recipient Photo</span> <input type="checkbox" checked={showPhoto} onChange={(e) => setShowPhoto(e.target.checked)} className="accent-indigo-600 h-4 w-4" /></label>
+                    <label className="flex items-center justify-between cursor-pointer"><span>Show Official Badge</span> <input type="checkbox" checked={showBadge} onChange={(e) => setShowBadge(e.target.checked)} className="accent-indigo-600 h-4 w-4" /></label>
+                    <label className="flex items-center justify-between cursor-pointer"><span>Show Verification QR</span> <input type="checkbox" checked={showQrCode} onChange={(e) => setShowQrCode(e.target.checked)} className="accent-indigo-600 h-4 w-4" /></label>
+                    <label className="flex items-center justify-between cursor-pointer"><span>Show Watermark</span> <input type="checkbox" checked={showWatermark} onChange={(e) => setShowWatermark(e.target.checked)} className="accent-indigo-600 h-4 w-4" /></label>
                   </div>
-
-                  <div>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label className="text-sm font-semibold">Recipient size</label>
-                      <span className="text-xs text-slate-500">
-                        {values.recipientSize}px
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="22"
-                      max="56"
-                      value={values.recipientSize}
-                      onChange={(e) =>
-                        update('recipientSize', Number(e.target.value))
-                      }
-                      className="w-full accent-indigo-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold">
-                      Border style
-                    </label>
-                    <select
-                      value={borderStyle}
-                      onChange={(e) => setBorderStyle(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
-                    >
-                      <option value="auto">Template default</option>
-                      <option value="double">Double border</option>
-                      <option value="solid">Solid border</option>
-                      <option value="dashed">Dashed border</option>
-                      <option value="simple">Minimal border</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-3 border-t border-slate-100 pt-3">
-                    <p className="text-sm font-semibold">Show on certificate</p>
-                    {[
-                      {
-                        label: 'Organization logo',
-                        checked: showLogo,
-                        change: setShowLogo,
-                      },
-                      {
-                        label: 'Recipient photo',
-                        checked: showPhoto,
-                        change: setShowPhoto,
-                      },
-                      {
-                        label: 'Signature',
-                        checked: showSignature,
-                        change: setShowSignature,
-                      },
-                      {
-                        label: 'Completion date',
-                        checked: showDate,
-                        change: setShowDate,
-                      },
-                      {
-                        label: 'Certificate ID',
-                        checked: showCertificateId,
-                        change: setShowCertificateId,
-                      },
-                    ].map((item) => (
-                      <label
-                        key={item.label}
-                        className="flex cursor-pointer items-center justify-between gap-3 text-sm"
-                      >
-                        {item.label}
-                        <input
-                          type="checkbox"
-                          checked={item.checked}
-                          onChange={(e) => item.change(e.target.checked)}
-                          className="h-4 w-4 accent-indigo-600"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </>
+                </div>
               )}
 
               {activeTab === 'assets' && (
-                <>
-                  <p className="text-sm leading-6 text-slate-500">
-                    Upload images from your device. Images are read in your
-                    browser for this preview; this component does not upload
-                    them to a server.
-                  </p>
-
+                <div className="space-y-3">
                   {[
-                    {
-                      label: 'Organization logo',
-                      description: 'PNG recommended for transparent logos',
-                      input: logoInput,
-                      asset: logo,
-                      setter: setLogo,
-                    },
-                    {
-                      label: 'Recipient photo',
-                      description: 'Optional photo on the certificate',
-                      input: photoInput,
-                      asset: photo,
-                      setter: setPhoto,
-                    },
-                    {
-                      label: 'Signature image',
-                      description: 'Use an authorized signature only',
-                      input: signatureInput,
-                      asset: signature,
-                      setter: setSignature,
-                    },
-                    {
-                      label: 'Background image',
-                      description: 'Optional full-certificate background',
-                      input: backgroundInput,
-                      asset: background,
-                      setter: setBackground,
-                    },
+                    { label: 'Organization Logo', input: logoInput, asset: logo, setter: setLogo },
+                    { label: 'Recipient Photo', input: photoInput, asset: photo, setter: setPhoto },
+                    { label: 'Signature Image', input: signatureInput, asset: signature, setter: setSignature },
+                    { label: 'Custom Background', input: backgroundInput, asset: background, setter: setBackground },
                   ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="rounded-xl border border-slate-200 p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-                          {item.asset ? (
-                            <img
-                              src={item.asset.data}
-                              alt={item.label}
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <ImagePlus size={20} className="text-slate-400" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold">{item.label}</p>
-                          <p className="text-xs text-slate-500">
-                            {item.asset ? item.asset.name : item.description}
-                          </p>
-                        </div>
-                        {item.asset && (
-                          <button
-                            type="button"
-                            onClick={() => item.setter(null)}
-                            aria-label={`Remove ${item.label}`}
-                            className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
-                          >
-                            <X size={16} />
-                          </button>
-                        )}
-                      </div>
-
-                      <input
-                        ref={item.input}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          uploadImage(e.target.files?.[0], item.setter);
-                          e.currentTarget.value = '';
-                        }}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => item.input.current?.click()}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold hover:bg-slate-50"
-                      >
-                        <Upload size={15} />
-                        {item.asset ? 'Replace image' : 'Upload image'}
-                      </button>
+                    <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-200 p-2.5 bg-slate-50/50">
+                      <div><span className="text-xs font-semibold block text-slate-700">{item.label}</span><span className="text-[10px] text-slate-400">{item.asset ? item.asset.name : 'No file'}</span></div>
+                      <input ref={item.input} type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0], item.setter)} />
+                      <button onClick={() => item.input.current?.click()} className="rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 shadow-xs"><Upload size={13} className="inline mr-1" />{item.asset ? 'Change' : 'Upload'}</button>
                     </div>
                   ))}
-                </>
+                </div>
               )}
             </div>
           </section>
 
-          {notice && (
-            <div
-              role="status"
-              className="rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm text-indigo-800"
-            >
-              {notice}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={resetAll}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold hover:bg-slate-50 sm:hidden"
-          >
-            <RotateCcw size={16} />
-            Reset design
-          </button>
+          {notice && <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-xs text-indigo-800">{notice}</div>}
         </aside>
 
-        {/* Preview */}
+        {/* Preview Area */}
         <section className="min-w-0">
-          <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-bold">Live preview</h2>
-              <p className="text-sm text-slate-500">
-                Changes appear here as you edit.
-              </p>
-            </div>
+          <div className="no-print mb-3 flex items-center justify-between">
+            <h2 className="font-bold text-sm text-slate-700">Live Canva Preview</h2>
+            
+            <div className="flex items-center gap-2">
+              {/* Bulk Navigation Controls */}
+              {isBulkMode && (
+                <div className="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-2xs">
+                  <button onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronLeft size={16} /></button>
+                  <span className="text-xs font-mono font-bold px-1">{currentIndex + 1} / {bulkData.length}</span>
+                  <button onClick={() => setCurrentIndex(prev => Math.min(bulkData.length - 1, prev + 1))} disabled={currentIndex === bulkData.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronRight size={16} /></button>
+                </div>
+              )}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Ruler size={16} className="text-slate-500" />
-              <select
-                value={paper}
-                onChange={(e) => setPaper(e.target.value)}
-                className="max-w-[185px] rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm"
-                aria-label="Certificate paper size"
-              >
-                {Object.keys(paperSizes).map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-                <option value="Custom Size">Custom Size</option>
+              <select value={paper} onChange={(e) => setPaper(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs">
+                {Object.keys(paperSizes).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-
-              <select
-                value={unit}
-                onChange={(e) => setUnit(e.target.value as Unit)}
-                className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm"
-                aria-label="Measurement unit"
-              >
-                <option value="mm">mm</option>
-                <option value="cm">cm</option>
-                <option value="in">in</option>
-                <option value="px">px</option>
+              <select value={unit} onChange={(e) => setUnit(e.target.value as Unit)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs">
+                <option value="mm">mm</option><option value="in">in</option><option value="px">px</option>
               </select>
             </div>
           </div>
 
-          {paper === 'Custom Size' && (
-            <div className="no-print mb-3 grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-3">
-              <div>
-                <label className="mb-1 block text-xs font-semibold">
-                  Width ({unit})
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="2000"
-                  value={customWidth}
-                  onChange={(e) => setCustomWidth(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-semibold">
-                  Height ({unit})
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="2000"
-                  value={customHeight}
-                  onChange={(e) => setCustomHeight(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <p className="col-span-2 text-xs text-slate-500">
-                Custom dimensions are interpreted in the selected unit.
-              </p>
-            </div>
-          )}
-
-          <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-200/70 p-3 sm:p-6">
-            <div className="mx-auto w-full" style={{ maxWidth: '1100px' }}>
+          <div className="overflow-auto rounded-2xl border border-slate-300 bg-slate-200/90 p-4 shadow-inner">
+            <div className="mx-auto w-full max-w-[1100px]">
               <div
                 id="certificate-print-area"
-                className="relative mx-auto overflow-hidden bg-white shadow-xl"
+                className="relative mx-auto overflow-hidden bg-white shadow-2xl transition-all"
                 style={{
                   width: '100%',
                   aspectRatio: String(aspectRatio),
-                  color: '#202020',
                   fontFamily: values.font,
-                  backgroundImage: background
-                    ? `url("${background.data}")`
-                    : undefined,
+                  backgroundImage: background ? `url("${background.data}")` : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }}
               >
+                {/* Watermark Overlay */}
+                {showWatermark && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] rotate-[-30deg] font-black tracking-[0.2em] text-6xl uppercase" style={{ color: accent }}>
+                    {values.watermarkText}
+                  </div>
+                )}
+
                 <div
-                  className="certificate-inner absolute inset-[2.5%] flex flex-col items-center justify-between overflow-hidden text-center"
+                  className="absolute inset-0 flex flex-col justify-between overflow-hidden p-[4.5%]"
                   style={{
-                    borderColor: accent,
-                    borderWidth: effectiveBorder === 'simple' ? '1px' : '3px',
-                    borderStyle:
-                      effectiveBorder === 'double'
-                        ? 'double'
-                        : effectiveBorder === 'dashed'
-                          ? 'dashed'
-                          : 'solid',
-                    padding: '3%',
-                    backgroundColor: background ? 'rgba(255,255,255,0.88)' : '#ffffff',
-                    backgroundImage:
-                      background
-                        ? undefined
-                        : template === 'cyber' || template === 'neon'
-                          ? 'radial-gradient(circle at top right, rgba(29,78,216,0.09), transparent 42%)'
-                          : template === 'sunset'
-                            ? 'linear-gradient(135deg, rgba(251,191,36,0.08), rgba(244,63,94,0.08))'
-                            : undefined,
+                    backgroundColor: background ? 'rgba(255,255,255,0.92)' : '#fff',
+                    border: template === 'canva_corporate' ? `10px solid ${accent}` : `${borderStyle === 'double' ? '6px' : '3px'} ${borderStyle} ${accent}`,
                   }}
                 >
-                  {/* Top section */}
-                  <div className="flex w-full flex-col items-center">
-                    {showLogo && logo && (
-                      <img
-                        src={logo.data}
-                        alt="Organization logo"
-                        className="mb-[1%] object-contain"
-                        style={{ maxWidth: '16%', maxHeight: '11%' }}
-                      />
-                    )}
+                  {/* Modern Accent Bar */}
+                  {template === 'canva_modern' && <div className="absolute left-0 top-0 bottom-0 w-[2.5%]" style={{ backgroundColor: accent }} />}
 
-                    <div
-                      className="font-sans text-[clamp(8px,1.5vw,17px)] font-bold uppercase tracking-[0.12em]"
-                      style={{ color: accent }}
-                    >
-                      {values.organization || 'YOUR ORGANIZATION'}
+                  {/* Top Bar */}
+                  <div className="flex justify-between items-center z-10">
+                    <div className="flex items-center gap-3">
+                      {showLogo && logo && <img src={logo.data} alt="Logo" className="max-h-[50px] object-contain" />}
+                      <div>
+                        <div className="text-[13px] font-extrabold uppercase tracking-widest" style={{ color: accent }}>{values.organization}</div>
+                        <div className="h-[2px] w-14 mt-0.5 rounded" style={{ backgroundColor: accent }} />
+                      </div>
                     </div>
 
-                    <div
-                      className="my-[1%] h-px w-[35%]"
-                      style={{ backgroundColor: accent }}
-                    />
-
-                    <div
-                      className="max-w-full font-bold uppercase leading-tight"
-                      style={{
-                        color: ['cyber', 'neon'].includes(template) ? '#17365d' : accent,
-                        fontSize: `clamp(12px, ${values.fontSize / 10}vw, ${values.fontSize}px)`,
-                      }}
-                    >
-                      {values.title || 'CERTIFICATE'}
+                    <div className="flex items-center gap-2">
+                      {showBadge && (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 bg-amber-50 shadow-xs" style={{ borderColor: accent }}>
+                          <ShieldCheck size={24} style={{ color: accent }} />
+                        </div>
+                      )}
                     </div>
-
-                    <p className="mt-[1.5%] text-[clamp(8px,1.2vw,15px)] italic text-slate-600">
-                      {values.subtitle}
-                    </p>
                   </div>
 
-                  {/* Recipient */}
-                  <div className="flex w-full flex-1 flex-col items-center justify-center py-[1%]">
+                  {/* Center Content (Dynamically rendered based on Single or Bulk Record) */}
+                  <div className="flex flex-col items-center text-center my-auto py-2 z-10">
+                    <div className="font-black uppercase tracking-wider mb-1" style={{ color: accent, fontSize: `clamp(16px, 3.5vw, ${values.fontSize}px)` }}>{values.title}</div>
+                    <p className="text-[13px] italic text-slate-500 mb-2">{values.subtitle}</p>
+
                     {showPhoto && photo && (
-                      <img
-                        src={photo.data}
-                        alt="Recipient"
-                        className="mb-[1.5%] rounded-full border-2 object-cover"
-                        style={{
-                          borderColor: accent,
-                          width: 'clamp(35px, 7vw, 90px)',
-                          height: 'clamp(35px, 7vw, 90px)',
-                        }}
-                      />
+                      <img src={photo.data} alt="Recipient" className="mb-2 rounded-full border-2 object-cover shadow-sm" style={{ borderColor: accent, width: '68px', height: '68px' }} />
                     )}
 
-                    <div
-                      className="max-w-[94%] break-words font-bold leading-tight"
-                      style={{
-                        color: accent,
-                        fontSize: `clamp(15px, ${values.recipientSize / 10}vw, ${values.recipientSize}px)`,
-                      }}
-                    >
-                      {values.recipient || 'Recipient Name'}
+                    <div className="font-bold tracking-wide mb-2 border-b-2 pb-1 px-6" style={{ color: accent, borderColor: accent, fontSize: `clamp(20px, 4vw, ${values.recipientSize}px)` }}>
+                      {activeRecipient}
                     </div>
 
-                    <div
-                      className="my-[1.5%] h-[2px] w-[45%]"
-                      style={{ backgroundColor: accent }}
-                    />
-
-                    <p className="max-w-[88%] text-[clamp(8px,1.2vw,15px)] leading-relaxed text-slate-700">
-                      {values.description}
-                    </p>
-
-                    <div
-                      className="mt-[1.5%] max-w-[90%] break-words font-bold leading-tight"
-                      style={{
-                        color: template === 'minimal' ? '#222222' : accent,
-                        fontSize: 'clamp(11px, 1.7vw, 21px)',
-                      }}
-                    >
-                      {values.course || 'Course / Programme Name'}
-                    </div>
+                    <p className="max-w-[82%] text-[13px] text-slate-600 mb-2 leading-relaxed">{values.description}</p>
+                    <div className="font-bold text-[16px] text-slate-800 uppercase tracking-wide">{activeCourse}</div>
                   </div>
 
-                  {/* Bottom section */}
-                  <div className="flex w-full items-end justify-between gap-[3%]">
-                    <div className="flex min-w-0 flex-1 flex-col items-center">
-                      {showDate && (
-                        <>
-                          <span
-                            className="text-[clamp(7px,1vw,12px)] font-semibold"
-                            style={{ color: accent }}
-                          >
-                            DATE
-                          </span>
-                          <span className="mt-1 text-[clamp(7px,1vw,12px)]">
-                            {formattedDate}
-                          </span>
-                        </>
-                      )}
+                  {/* Bottom Footer Area */}
+                  <div className="flex items-end justify-between pt-2 z-10 text-xs">
+                    <div className="flex flex-col">
+                      <span className="font-bold uppercase text-[10px] text-slate-400">Date Issued</span>
+                      <span className="font-semibold text-slate-700">{formattedDate}</span>
                     </div>
 
-                    <div className="flex min-w-0 flex-1 flex-col items-center">
+                    {/* QR Code Verification Simulation */}
+                    {showQrCode && (
+                      <div className="flex flex-col items-center bg-white p-1 border rounded shadow-2xs">
+                        <QrCode size={38} className="text-slate-800" />
+                        <span className="text-[8px] font-mono text-slate-500 mt-0.5">SCAN TO VERIFY</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col items-center min-w-[140px]">
                       {showSignature && signature ? (
-                        <img
-                          src={signature.data}
-                          alt="Signature"
-                          className="mb-1 h-auto max-h-[45px] max-w-[90%] object-contain"
-                        />
+                        <img src={signature.data} alt="Signature" className="max-h-[35px] object-contain mb-1" />
                       ) : (
-                        <div
-                          className="mb-1 w-[90%] border-t"
-                          style={{ borderColor: accent }}
-                        />
+                        <div className="w-full border-t border-slate-400 mb-1" />
                       )}
-                      <span className="max-w-full break-words text-[clamp(7px,1vw,12px)] font-bold">
-                        {values.signatory}
-                      </span>
-                      <span className="max-w-full break-words text-[clamp(6px,0.9vw,11px)] text-slate-600">
-                        {values.signatoryRole}
-                      </span>
+                      <span className="font-bold text-slate-800 text-xs">{values.signatory}</span>
+                      <span className="text-[10px] text-slate-500">{values.signatoryRole}</span>
                     </div>
                   </div>
 
-                  {showCertificateId && (
-                    <div
-                      className="absolute bottom-[1.3%] right-[2%] max-w-[40%] truncate font-sans text-[clamp(6px,0.8vw,10px)]"
-                      style={{ color: accent }}
-                    >
-                      ID: {values.certificateId}
-                    </div>
-                  )}
+                  {/* Certificate ID */}
+                  <div className="absolute bottom-[2%] left-[4.5%] font-mono text-[9px] text-slate-400">
+                    ID: {activeId}
+                  </div>
 
-                  {['elegant', 'classic', 'royal'].includes(template) && (
+                  {/* Corner Flourishes */}
+                  {['canva_classic', 'canva_royal'].includes(template) && (
                     <>
-                      <div
-                        className="pointer-events-none absolute left-[1.5%] top-[1.5%] h-[12%] w-[12%] rounded-tl-2xl border-l-2 border-t-2"
-                        style={{ borderColor: accent }}
-                      />
-                      <div
-                        className="pointer-events-none absolute bottom-[1.5%] right-[1.5%] h-[12%] w-[12%] rounded-br-2xl border-b-2 border-r-2"
-                        style={{ borderColor: accent }}
-                      />
+                      <div className="absolute top-2.5 left-2.5 h-8 w-8 border-l-2 border-t-2 pointer-events-none" style={{ borderColor: accent }} />
+                      <div className="absolute top-2.5 right-2.5 h-8 w-8 border-r-2 border-t-2 pointer-events-none" style={{ borderColor: accent }} />
+                      <div className="absolute bottom-2.5 left-2.5 h-8 w-8 border-l-2 border-b-2 pointer-events-none" style={{ borderColor: accent }} />
+                      <div className="absolute bottom-2.5 right-2.5 h-8 w-8 border-r-2 border-b-2 pointer-events-none" style={{ borderColor: accent }} />
                     </>
-                  )}
-
-                  {['cyber', 'neon'].includes(template) && (
-                    <div
-                      className="pointer-events-none absolute left-0 top-0 h-1 w-full"
-                      style={{ backgroundColor: accent }}
-                    />
                   )}
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="no-print mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <span>
-              Canvas: {dimensions.width} × {dimensions.height} {unit}
-            </span>
-            <span>For best results, enable background graphics in print settings.</span>
-          </div>
-
-          <div className="no-print mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-            <strong>Export tip:</strong> Click Export PDF, select “Save as PDF”
-            in the browser print dialog, and disable browser headers/footers if
-            available. Confirm paper size and orientation before saving.
           </div>
         </section>
       </main>
