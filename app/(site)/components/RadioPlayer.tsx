@@ -11,12 +11,58 @@ type Station = {
 };
 
 // Station list. Notun station add korte ekta line jog koro.
+// http:// stream gulo shudhu localhost e chole; https site e deploy korle block hoy.
 const STATIONS: Station[] = [
-  { id: 'mirchi-hindi', name: 'Radio Mirchi Hindi', urls: ['https://eu8.fastcast4u.com/proxy/clyedupq/stream/;'] },
+  // Hindi
+  { id: 'mirchi-hindi', name: 'Radio Mirchi Hindi', urls: ['https://eu8.fastcast4u.com/proxy/clyedupq/stream/;', 'https://eu8.fastcast4u.com/proxy/clyedupq/stream'] },
+  { id: 'bollywood-purane', name: 'Bollywood Gaane Purane', urls: ['https://stream.zeno.fm/6n6ewddtad0uv'] },
+  { id: 'mirchi-top20', name: 'Mirchi Top 20', urls: ['https://drive.uber.radio/uber/bollywoodnow/icecast.audio'] },
+  { id: 'hindi-gold', name: 'Hindi Gold Radio', urls: ['https://azuracast.vibesounds.in:8010/radio.mp3'] },
+  { id: 'rafi-hits', name: 'Rafi Hit Songs', urls: ['https://stream-143.zeno.fm/0zkr7x8ztm0uv'] },
   { id: 'fever', name: 'Fever 104 FM', urls: ['https://radio.canstream.co.uk:8115/live.mp3'] },
   { id: 'red-hindi', name: 'Red FM Hindi', urls: ['https://funasia.streamguys1.com/live9'] },
-  { id: 'city', name: 'Radio City Hindi', urls: ['http://prclive1.listenon.in:9960/'] },
-  { id: 'mirchi', name: 'Radio Mirchi 98.3', urls: ['http://peridot.streamguys.com:7150/Mirchi'] },
+  { id: 'nonstop-hindi', name: 'Non Stop Hindi Radio', urls: ['http://198.178.123.14:8216/'] },
+  { id: 'garam-masala', name: 'Radio Garam Masala', urls: ['http://69.175.94.98:8146/'] },
+
+  // Radio City (http)
+  { id: 'city', name: 'Radio City Hindi', urls: ['http://prclive1.listenon.in:9960/', 'http://208.115.222.203:9960/'] },
+  { id: 'city-fusion', name: 'Radio City Fusion', urls: ['http://prclive1.listenon.in:8992'] },
+  { id: 'city-ghazal', name: 'Radio City Ghazal', urls: ['http://prclive1.listenon.in:8860'] },
+  { id: 'city-ishq', name: 'Radio City Ishq', urls: ['http://prclive1.listenon.in:8808'] },
+  { id: 'city-kishore', name: 'Radio City Kishore Kumar', urls: ['http://prclive1.listenon.in:8834/'] },
+  { id: 'city-lata', name: 'Radio City Lata Mangeshkar', urls: ['http://prclive1.listenon.in:8832'] },
+  { id: 'city-rdb', name: 'Radio City RD Burman', urls: ['http://prclive1.listenon.in:8828'] },
+  { id: 'city-smaran', name: 'Radio City Smaran', urls: ['http://prclive1.listenon.in:9950'] },
+  { id: 'city-wellness', name: 'Radio City Wellness', urls: ['http://prclive1.listenon.in:8810/'] },
+  { id: 'city-asha', name: 'Radio City Asha Bhosle', urls: ['http://prclive1.listenon.in:8812/'] },
+  { id: 'city-rafi', name: 'Mohammed Rafi Radio', urls: ['http://prclive1.listenon.in:8814/'] },
+  { id: 'city-mukesh', name: 'Mukesh Radio', urls: ['http://prclive1.listenon.in:9308/'] },
+
+  // Singers (http)
+  { id: 'arijit', name: 'Arijit Singh Radio', urls: ['http://southradios.net:9090/arijitsinghradio'] },
+  { id: 'udit', name: 'Udit Narayan Radio', urls: ['http://192.227.116.104:4182/autodj'] },
+
+  // Radio Hungama (http)
+  { id: 'hungama-90s', name: 'Hungama 90s Once Again', urls: ['http://103.16.47.70:7444/'] },
+  { id: 'hungama-dilse', name: 'Hungama Bollywood Dil Se', urls: ['http://103.16.47.70:7333/'] },
+  { id: 'hungama-evergreen', name: 'Hungama Evergreen Bollywood', urls: ['http://103.16.47.70:7666/'] },
+  { id: 'hungama-hot', name: 'Hungama Hot Now Bollywood', urls: ['http://103.16.47.70:7222/'] },
+  { id: 'hungama-ghazals', name: 'Hungama Best of Ghazals', urls: ['http://103.16.47.70:9666/'] },
+  { id: 'hungama-dance', name: 'Hungama Dance Masti', urls: ['http://103.16.47.70:9222/'] },
+
+  // Bengali - India
+  { id: 'mellow-bangla', name: 'Mellow Bangla', urls: ['https://radio.mellowbangla.com/stream'] },
+
+  // Bengali - Bangladesh
+  { id: 'foorti', name: 'Radio Foorti', urls: ['https://radiofoorti.fm/api/stream'] },
+  { id: 'rajshahi', name: 'Rajshahi FM', urls: ['https://stream.zeno.fm/nxfshdayjrdvv'] },
+  { id: 'jkkniu', name: 'Radio JKKNIU', urls: ['https://stream.zeno.fm/risgdzpf1cxtv'] },
+  { id: 'vivid-voice', name: 'Radio Vivid Voice', urls: ['https://stream.zeno.fm/xuin6ocdc2juv'] },
+  { id: 'a2z', name: 'A2Z Radio', urls: ['https://listen.radioking.com/radio/1743/stream/125'] },
+  { id: 'goongoon', name: 'Radio GoonGoon', urls: ['https://audio.streamcast.xyz/listen/radiogoongoon/radio.mp3'] },
+
+  // Purono (agey offline dekhiyechilo)
+  { id: 'mirchi', name: 'Radio Mirchi 98.3 / Kolkata', urls: ['http://peridot.streamguys.com:7150/Mirchi'] },
   { id: 'big', name: 'Big FM 92.7', urls: ['http://sc-bb.1.fm:8017/'] },
   { id: 'fmgold', name: 'AIR FM Gold', urls: ['http://51.15.208.163:8081/radio/fmgold/icecast.audio'] },
 ];
@@ -63,16 +109,31 @@ function Equalizer({
 
     const data = new Uint8Array(analyser.frequencyBinCount);
     const prev = [...IDLE_H];
+    const peak = BANDS.map(() => 0.2); // prottek band er shorbochcho level (dhire kome)
+    const avg = BANDS.map(() => 0); // prottek band er gorpor level
     let raf = 0;
 
     const tick = () => {
       analyser.getByteFrequencyData(data);
-      BANDS.forEach(([a, b, gain], i) => {
+      BANDS.forEach(([a, b], i) => {
         let sum = 0;
         for (let k = a; k < b; k++) sum += data[k];
-        const level = Math.min(1, (sum / (b - a) / 255) * gain);
+        const v = sum / (b - a) / 255;
+
+        // Auto-gain: radio er gaan onek jor (compressed), tai sidha value dile
+        // shob bar full hoye thake. Tai gorpor theke koto beshi seta dekhi.
+        peak[i] = Math.max(v, peak[i] * 0.992);
+        avg[i] = avg[i] * 0.985 + v * 0.015;
+        const low = avg[i] * 0.75;
+        let level = (v - low) / Math.max(peak[i] - low, 0.06);
+        level = Math.min(1, Math.max(0, level));
+        level = Math.pow(level, 1.4); // contrast
+
         const target = 3 + level * 11;
-        prev[i] = prev[i] * 0.55 + target * 0.45; // smooth
+        // druto uthbe, dhire nambe
+        const rate = target > prev[i] ? 0.65 : 0.22;
+        prev[i] = prev[i] + (target - prev[i]) * rate;
+
         const el = bars.current[i];
         if (el) el.style.height = `${prev[i].toFixed(1)}px`;
       });
@@ -216,7 +277,9 @@ export default function RadioPlayer() {
       const source = ctx.createMediaElementSource(viz);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.6;
+      analyser.smoothingTimeConstant = 0.5;
+      analyser.minDecibels = -85;
+      analyser.maxDecibels = -20;
       const gain = ctx.createGain();
       gain.gain.value = volumeRef.current;
       source.connect(analyser);
@@ -307,7 +370,7 @@ export default function RadioPlayer() {
     setBuffering(false);
 
     // Auto-skip: porer chalu station
-    if (hops < STATIONS.length - 1) {
+    if (hops < Math.min(4, STATIONS.length - 1)) {
       const nxt = pickNext(station.id, failedRef.current);
       if (nxt) {
         play(nxt, hops + 1);
@@ -467,7 +530,7 @@ export default function RadioPlayer() {
           <ul
             ref={listRef}
             style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
-            className="w-60 max-h-80 overflow-y-auto py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl"
+            className="w-60 max-h-96 overflow-y-auto py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl"
           >
             {STATIONS.map((s) => {
               const isBad = failed.has(s.id);
