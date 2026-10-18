@@ -68,37 +68,58 @@ const STATIONS: Station[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Equalizer
+// Equalizer (12 bar)
 // idle  : pause/stop, bar gulo alada alada uchchotay thamano
 // sim   : stream er audio porte parchi na (CORS), tai ekta chalu animation
 // live  : asol gaan er frequency onujayi bar nache
 // ---------------------------------------------------------------------------
 type EqMode = 'idle' | 'sim' | 'live';
 
-const IDLE_H = [5, 9, 6, 11, 7]; // px
-const BANDS: [number, number, number][] = [
-  // [startBin, endBin, gain]  (fftSize 256 => 128 bin, ~187Hz each)
-  [1, 3, 1.2],
-  [3, 7, 1.4],
-  [7, 16, 1.9],
-  [16, 36, 2.6],
-  [36, 70, 3.4],
+const BAR_MAX = 20; // px, bar er shorbochcho uchchota
+const BAR_MIN = 3; // px, shobcheye chhoto
+
+const IDLE_H = [6, 10, 7, 13, 9, 15, 8, 12, 6, 11, 7, 9]; // px
+
+// sim mode e prottek bar er alada gotir jonno
+const SIM_DUR = [720, 980, 820, 1100, 860, 940, 760, 1040, 880, 800, 1000, 900]; // ms
+const SIM_DELAY = [0, -300, -120, -520, -420, -200, -640, -80, -360, -560, -240, -460]; // ms
+
+const BANDS: [number, number][] = [
+  // [startBin, endBin]  (fftSize 256 => 128 bin, ~187Hz each)
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [4, 6],
+  [6, 8],
+  [8, 11],
+  [11, 15],
+  [15, 20],
+  [20, 27],
+  [27, 36],
+  [36, 50],
+  [50, 70],
 ];
+
+const BASS_BARS = 3; // prothom koyta bar diye beat (glow) mapa hoy
 
 function Equalizer({
   mode,
   analyserRef,
+  onLevel,
 }: {
   mode: EqMode;
   analyserRef: React.MutableRefObject<AnalyserNode | null>;
+  onLevel: (bass: number) => void;
 }) {
   const bars = useRef<(HTMLElement | null)[]>([]);
 
   useEffect(() => {
-    const reset = () =>
+    const reset = () => {
       bars.current.forEach((b, i) => {
         if (b) b.style.height = `${IDLE_H[i]}px`;
       });
+      onLevel(0);
+    };
 
     if (mode !== 'live') {
       reset();
@@ -111,6 +132,7 @@ function Equalizer({
     const prev = [...IDLE_H];
     const peak = BANDS.map(() => 0.2); // prottek band er shorbochcho level (dhire kome)
     const avg = BANDS.map(() => 0); // prottek band er gorpor level
+    const levels = BANDS.map(() => 0);
     let raf = 0;
 
     const tick = () => {
@@ -128,8 +150,9 @@ function Equalizer({
         let level = (v - low) / Math.max(peak[i] - low, 0.06);
         level = Math.min(1, Math.max(0, level));
         level = Math.pow(level, 1.4); // contrast
+        levels[i] = level;
 
-        const target = 3 + level * 11;
+        const target = BAR_MIN + level * (BAR_MAX - BAR_MIN);
         // druto uthbe, dhire nambe
         const rate = target > prev[i] ? 0.65 : 0.22;
         prev[i] = prev[i] + (target - prev[i]) * rate;
@@ -137,6 +160,12 @@ function Equalizer({
         const el = bars.current[i];
         if (el) el.style.height = `${prev[i].toFixed(1)}px`;
       });
+
+      // Bass (prothom koyta bar) er gorpor = glow er beat
+      let bass = 0;
+      for (let i = 0; i < BASS_BARS; i++) bass += levels[i];
+      onLevel(bass / BASS_BARS);
+
       raf = requestAnimationFrame(tick);
     };
     tick();
@@ -145,7 +174,7 @@ function Equalizer({
       cancelAnimationFrame(raf);
       reset();
     };
-  }, [mode, analyserRef]);
+  }, [mode, analyserRef, onLevel]);
 
   return (
     <span className="nyx-eq" data-mode={mode} aria-hidden="true">
@@ -155,7 +184,11 @@ function Equalizer({
           ref={(el) => {
             bars.current[i] = el;
           }}
-          style={{ height: h }}
+          style={{
+            height: h,
+            animationDuration: `${SIM_DUR[i]}ms`,
+            animationDelay: `${SIM_DELAY[i]}ms`,
+          }}
         />
       ))}
     </span>
@@ -163,17 +196,30 @@ function Equalizer({
 }
 
 const EQ_CSS = `
-.nyx-eq{display:inline-flex;align-items:flex-end;gap:2px;height:14px;flex-shrink:0}
-.nyx-eq i{display:block;width:3px;border-radius:2px;background:currentColor}
+.nyx-eq{display:inline-flex;align-items:flex-end;gap:2px;height:${BAR_MAX}px;flex-shrink:0}
+.nyx-eq i{display:block;width:2px;border-radius:2px;background:currentColor}
 .nyx-eq[data-mode="idle"] i{transition:height .25s ease}
 .nyx-eq[data-mode="sim"] i{animation:nyx-eq 900ms ease-in-out infinite}
-.nyx-eq[data-mode="sim"] i:nth-child(1){animation-duration:720ms}
-.nyx-eq[data-mode="sim"] i:nth-child(2){animation-duration:980ms;animation-delay:-300ms}
-.nyx-eq[data-mode="sim"] i:nth-child(3){animation-duration:820ms;animation-delay:-120ms}
-.nyx-eq[data-mode="sim"] i:nth-child(4){animation-duration:1100ms;animation-delay:-520ms}
-.nyx-eq[data-mode="sim"] i:nth-child(5){animation-duration:860ms;animation-delay:-420ms}
-@keyframes nyx-eq{0%,100%{height:3px}50%{height:14px}}
-@media (prefers-reduced-motion:reduce){.nyx-eq[data-mode="sim"] i{animation:none}}
+@keyframes nyx-eq{0%,100%{height:${BAR_MIN}px}50%{height:${BAR_MAX}px}}
+
+/* Player box glow: live = bass er shathe beat kore, sim = nijer moto pulse kore */
+.nyx-radio{transition:box-shadow .12s linear,border-color .3s ease}
+.nyx-glow-live{
+  border-color:transparent;
+  box-shadow:
+    0 0 calc(4px + var(--glow,0) * 20px) rgba(16,185,129,calc(0.15 + var(--glow,0) * 0.5)),
+    0 0 0 1px rgba(16,185,129,calc(0.2 + var(--glow,0) * 0.4));
+}
+.nyx-glow-sim{border-color:transparent;animation:nyx-glow 1.1s ease-in-out infinite}
+@keyframes nyx-glow{
+  0%,100%{box-shadow:0 0 4px rgba(16,185,129,.15),0 0 0 1px rgba(16,185,129,.2)}
+  50%{box-shadow:0 0 18px rgba(16,185,129,.45),0 0 0 1px rgba(16,185,129,.5)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .nyx-eq[data-mode="sim"] i{animation:none}
+  .nyx-glow-sim{animation:none;box-shadow:0 0 0 1px rgba(16,185,129,.35)}
+}
 `;
 
 export default function RadioPlayer() {
@@ -220,6 +266,11 @@ export default function RadioPlayer() {
     else failedRef.current.delete(id);
     setFailed(new Set(failedRef.current));
   };
+
+  // Gaan er bass onujayi glow er jor (React re-render chhara, shoja CSS variable e)
+  const handleLevel = useCallback((bass: number) => {
+    wrapRef.current?.style.setProperty('--glow', bass.toFixed(3));
+  }, []);
 
   // Saved station / volume restore
   useEffect(() => {
@@ -431,6 +482,7 @@ export default function RadioPlayer() {
 
   const eqMode: EqMode = playing && !buffering ? vizMode : 'idle';
   const label = error ? 'Stream unavailable' : current?.name ?? 'Radio';
+  const glowClass = eqMode === 'live' ? 'nyx-glow-live' : eqMode === 'sim' ? 'nyx-glow-sim' : '';
 
   const btn =
     'p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
@@ -438,7 +490,7 @@ export default function RadioPlayer() {
   return (
     <div
       ref={wrapRef}
-      className="relative flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs shadow-2xs"
+      className={`nyx-radio ${glowClass} relative flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs shadow-2xs`}
     >
       <style>{EQ_CSS}</style>
 
@@ -452,11 +504,11 @@ export default function RadioPlayer() {
           setShowVol(false);
           setOpen((o) => !o);
         }}
-        className="flex items-center gap-1.5 max-w-[150px] sm:max-w-[180px] cursor-pointer"
+        className="flex items-center gap-2 max-w-[200px] sm:max-w-[250px] cursor-pointer"
         aria-label="Choose radio station"
       >
         <span className={playing ? 'text-emerald-500' : error ? 'text-rose-400' : 'text-indigo-400'}>
-          <Equalizer mode={eqMode} analyserRef={analyserRef} />
+          <Equalizer mode={eqMode} analyserRef={analyserRef} onLevel={handleLevel} />
         </span>
         <span className="truncate font-semibold text-slate-700 dark:text-slate-200">{label}</span>
         {playing && !buffering && (

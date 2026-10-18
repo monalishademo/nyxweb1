@@ -221,7 +221,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-950">
       <style>{`
         @page { size: ${printWidth} ${printHeight}; margin: 0; }
         @media print {
@@ -234,15 +234,29 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
       `}</style>
 
       {/* Header */}
-      <header className="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 md:px-6 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="rounded-xl border border-slate-200 p-2 hover:bg-slate-100 transition"><ArrowLeft size={20} /></button>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow"><Award size={22} /></div>
-          <div><h1 className="text-lg font-bold">Pro Certificate Studio</h1><p className="text-xs text-slate-500">Canva Editor with Bulk CSV / Excel Import</p></div>
+      <header className="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 md:px-6 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 transition-all cursor-pointer"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Bulk Certificate Generator</h1>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                Creative
+              </span>
+            </div>
+            <p className="text-sm text-slate-500">
+              Generate multiple professional certificates instantly with data import.
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={resetAll} className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 transition"><RotateCcw size={16} /> Reset</button>
-          <button onClick={() => window.print()} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"><Download size={16} /> Export PDF / Print</button>
+          <button onClick={resetAll} className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 transition cursor-pointer"><RotateCcw size={16} /> Reset</button>
+          <button onClick={() => window.print()} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition cursor-pointer"><Download size={16} /> Export PDF / Print</button>
         </div>
       </header>
 
@@ -251,7 +265,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
         <aside className="no-print space-y-4">
           
           {/* Bulk Generation Card */}
-          <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 shadow-sm">
+          <section className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><Users size={18} className="text-indigo-600" /><h3 className="font-bold text-sm text-indigo-900">Bulk Create Mode</h3></div>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isBulkMode ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{isBulkMode ? `${bulkData.length} Loaded` : 'Single Mode'}</span>
@@ -259,29 +273,29 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
             <p className="text-xs text-slate-600 mb-3">Upload a CSV or Excel export to generate multiple certificates automatically.</p>
             
             <div className="flex gap-2">
-              <button onClick={downloadSampleCsv} className="flex-1 flex items-center justify-center gap-1 bg-white border border-indigo-200 py-1.5 px-2 rounded-xl text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition">
+              <button onClick={downloadSampleCsv} className="flex-1 flex items-center justify-center gap-1 bg-white border border-indigo-200 py-1.5 px-2 rounded-xl text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition cursor-pointer">
                 <FileSpreadsheet size={14} /> Sample CSV
               </button>
               <input ref={csvInput} type="file" accept=".csv,.txt" className="hidden" onChange={(e) => handleBulkUpload(e.target.files?.[0])} />
-              <button onClick={() => csvInput.current?.click()} className="flex-1 flex items-center justify-center gap-1 bg-indigo-600 py-1.5 px-2 rounded-xl text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-xs">
+              <button onClick={() => csvInput.current?.click()} className="flex-1 flex items-center justify-center gap-1 bg-indigo-600 py-1.5 px-2 rounded-xl text-xs font-semibold text-white hover:bg-indigo-700 transition shadow-2xs cursor-pointer">
                 <Upload size={14} /> Upload Data
               </button>
             </div>
 
             {isBulkMode && (
               <div className="mt-3 pt-3 border-t border-indigo-200 flex items-center justify-between text-xs">
-                <button onClick={() => { setIsBulkMode(false); setNotice('Switched to Single Mode'); }} className="text-indigo-700 underline font-semibold">Exit Bulk Mode</button>
+                <button onClick={() => { setIsBulkMode(false); setNotice('Switched to Single Mode'); }} className="text-indigo-700 underline font-semibold cursor-pointer">Exit Bulk Mode</button>
                 <span className="text-slate-600 font-mono">Record {currentIndex + 1} of {bulkData.length}</span>
               </div>
             )}
           </section>
 
           {/* Templates */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
             <div className="mb-3 flex items-center gap-2"><Sparkles size={18} className="text-indigo-600" /><h2 className="font-bold text-sm">Templates ({templates.length})</h2></div>
             <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
               {templates.map((t) => (
-                <button key={t.id} onClick={() => setTemplate(t.id)} className={`rounded-xl border p-2 text-left transition ${template === t.id ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'}`}>
+                <button key={t.id} onClick={() => setTemplate(t.id)} className={`rounded-xl border p-2 text-left transition cursor-pointer ${template === t.id ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'}`}>
                   <div className="mb-1 h-5 rounded bg-white border flex items-center justify-center" style={{ borderLeft: t.id === 'canva_modern' ? `4px solid ${accent}` : undefined }}>
                     <Award size={13} style={{ color: accent }} />
                   </div>
@@ -292,7 +306,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
           </section>
 
           {/* Editor Tabs */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
             <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50">
               {[
                 { id: 'content', label: 'Content', icon: FileText },
@@ -301,7 +315,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
               ].map((tab) => {
                 const Icon = tab.icon;
                 return (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold ${activeTab === tab.id ? 'border-b-2 border-indigo-600 bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:bg-slate-100'}`}>
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold cursor-pointer ${activeTab === tab.id ? 'border-b-2 border-indigo-600 bg-white text-indigo-700 shadow-2xs' : 'text-slate-500 hover:bg-slate-100'}`}>
                     <Icon size={15} /> {tab.label}
                   </button>
                 );
@@ -344,7 +358,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
                     <label className="text-xs font-semibold block mb-2 text-slate-600">Accent Color Theme</label>
                     <div className="flex flex-wrap gap-2">
                       {colorOptions.map((c) => (
-                        <button key={c.value} onClick={() => setAccent(c.value)} className={`h-8 w-8 rounded-full border-2 transition ${accent === c.value ? 'scale-110 border-slate-900 ring-2 ring-indigo-200' : 'border-white shadow'}`} style={{ backgroundColor: c.value }} />
+                        <button key={c.value} onClick={() => setAccent(c.value)} className={`h-8 w-8 rounded-full border-2 transition cursor-pointer ${accent === c.value ? 'scale-110 border-slate-900 ring-2 ring-indigo-200' : 'border-white shadow'}`} style={{ backgroundColor: c.value }} />
                       ))}
                     </div>
                   </div>
@@ -375,7 +389,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
                     <div key={item.label} className="flex items-center justify-between rounded-xl border border-slate-200 p-2.5 bg-slate-50/50">
                       <div><span className="text-xs font-semibold block text-slate-700">{item.label}</span><span className="text-[10px] text-slate-400">{item.asset ? item.asset.name : 'No file'}</span></div>
                       <input ref={item.input} type="file" accept="image/*" className="hidden" onChange={(e) => uploadImage(e.target.files?.[0], item.setter)} />
-                      <button onClick={() => item.input.current?.click()} className="rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 shadow-xs"><Upload size={13} className="inline mr-1" />{item.asset ? 'Change' : 'Upload'}</button>
+                      <button onClick={() => item.input.current?.click()} className="rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 shadow-2xs cursor-pointer"><Upload size={13} className="inline mr-1" />{item.asset ? 'Change' : 'Upload'}</button>
                     </div>
                   ))}
                 </div>
@@ -395,16 +409,16 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
               {/* Bulk Navigation Controls */}
               {isBulkMode && (
                 <div className="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 shadow-2xs">
-                  <button onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronLeft size={16} /></button>
+                  <button onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 cursor-pointer"><ChevronLeft size={16} /></button>
                   <span className="text-xs font-mono font-bold px-1">{currentIndex + 1} / {bulkData.length}</span>
-                  <button onClick={() => setCurrentIndex(prev => Math.min(bulkData.length - 1, prev + 1))} disabled={currentIndex === bulkData.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30"><ChevronRight size={16} /></button>
+                  <button onClick={() => setCurrentIndex(prev => Math.min(bulkData.length - 1, prev + 1))} disabled={currentIndex === bulkData.length - 1} className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 cursor-pointer"><ChevronRight size={16} /></button>
                 </div>
               )}
 
-              <select value={paper} onChange={(e) => setPaper(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs">
+              <select value={paper} onChange={(e) => setPaper(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs cursor-pointer">
                 {Object.keys(paperSizes).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <select value={unit} onChange={(e) => setUnit(e.target.value as Unit)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs">
+              <select value={unit} onChange={(e) => setUnit(e.target.value as Unit)} className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs cursor-pointer">
                 <option value="mm">mm</option><option value="in">in</option><option value="px">px</option>
               </select>
             </div>
@@ -453,7 +467,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
 
                     <div className="flex items-center gap-2">
                       {showBadge && (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 bg-amber-50 shadow-xs" style={{ borderColor: accent }}>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 bg-amber-50 shadow-2xs" style={{ borderColor: accent }}>
                           <ShieldCheck size={24} style={{ color: accent }} />
                         </div>
                       )}
@@ -466,7 +480,7 @@ export default function CertificateGeneratorTool({ onBack }: Props) {
                     <p className="text-[13px] italic text-slate-500 mb-2">{values.subtitle}</p>
 
                     {showPhoto && photo && (
-                      <img src={photo.data} alt="Recipient" className="mb-2 rounded-full border-2 object-cover shadow-sm" style={{ borderColor: accent, width: '68px', height: '68px' }} />
+                      <img src={photo.data} alt="Recipient" className="mb-2 rounded-full border-2 object-cover shadow-xs" style={{ borderColor: accent, width: '68px', height: '68px' }} />
                     )}
 
                     <div className="font-bold tracking-wide mb-2 border-b-2 pb-1 px-6" style={{ color: accent, borderColor: accent, fontSize: `clamp(20px, 4vw, ${values.recipientSize}px)` }}>
