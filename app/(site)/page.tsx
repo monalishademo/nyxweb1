@@ -475,16 +475,16 @@ export default function Home() {
       </button>
 
       <div>
-        {/* Top Header with NYX WEB ONE Signature Branding */}
-        <header className="anim-slide-down border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/95 -mx-3 sm:-mx-5 -mt-3 sm:-mt-5 px-6 sm:px-12 py-3.5 mb-8 transition-colors">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            
+        {/* Top Header with NYX WEB ONE Signature Branding (mobile responsive) */}
+        <header className="anim-slide-down border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/95 -mx-3 sm:-mx-5 -mt-3 sm:-mt-5 px-3 sm:px-6 md:px-12 py-3 sm:py-3.5 mb-8 transition-colors">
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+
             {/* Left: Signature NYX Logo + WEB ONE Subtitle */}
             <div
               onClick={handleBackToDashboard}
-              className="flex items-center gap-3 cursor-pointer select-none group"
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer select-none group shrink-0 whitespace-nowrap mr-auto"
             >
-              <span key={replayKey} className="text-2xl font-black tracking-[0.25em] text-slate-900 dark:text-white group-hover:text-emerald-500 group-hover:tracking-[0.35em] transition-all duration-300">
+              <span key={replayKey} className="text-xl sm:text-2xl font-black tracking-[0.15em] sm:tracking-[0.25em] text-slate-900 dark:text-white group-hover:text-emerald-500 group-hover:tracking-[0.35em] transition-all duration-300">
                 {'NYX'.split('').map((ch, i) => (
                   <span
                     key={i}
@@ -496,67 +496,75 @@ export default function Home() {
                 ))}
               </span>
               <div className="h-4 w-[1.5px] bg-slate-200 dark:bg-slate-800"></div>
-              <span className="text-xs font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase">
+              <span className="text-[10px] sm:text-xs font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase">
                 WEB ONE
               </span>
             </div>
 
-            {/* Right: Actions Navigation */}
-            <nav className="flex items-center gap-2.5 sm:gap-3">
-              {/* Dashboard Nav Button */}
-              <Magnetic>
-              <button
-                onClick={handleBackToDashboard}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-95"
-              >
-                Dashboard
-              </button>
-              </Magnetic>
+            {/* Right: Actions Navigation
+                Mobile: "contents" (children become direct items of the header row, radio wraps to its own line)
+                PC (md+): normal flex row like before */}
+            <nav className="contents md:flex md:items-center md:gap-3">
+              {/* Dashboard Nav Button (hidden on mobile, logo already goes home) */}
+              <div className="hidden sm:block">
+                <Magnetic>
+                  <button
+                    onClick={handleBackToDashboard}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-95"
+                  >
+                    Dashboard
+                  </button>
+                </Magnetic>
+              </div>
 
               {/* Command palette trigger */}
               <Magnetic>
-              <button
-                onClick={() => setPaletteOpen(true)}
-                aria-label="Search tools"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/50 hover:text-emerald-500 transition-all cursor-pointer active:scale-95"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>Search</span>
-                <kbd className="px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                  {modKey} K
-                </kbd>
-              </button>
+                <button
+                  onClick={() => setPaletteOpen(true)}
+                  aria-label="Search tools"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/50 hover:text-emerald-500 transition-all cursor-pointer active:scale-95"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Search</span>
+                  <kbd className="hidden md:inline px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    {modKey} K
+                  </kbd>
+                </button>
               </Magnetic>
 
-              {/* Dynamic Indian Radio Player Widget */}
-              <RadioPlayer />
+              {/* Dynamic Indian Radio Player Widget
+                  Mobile: own full-width line below | PC: inline as before */}
+              <div className="order-last basis-full min-w-0 md:order-none md:basis-auto">
+                <RadioPlayer />
+              </div>
 
-              {/* Admin Zone Link */}
+              {/* Admin Zone Link ("Admin" on mobile) */}
               <Magnetic>
-              <Link
-                href="/login"
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/50 hover:text-emerald-500 transition-all shadow-2xs hover:-translate-y-0.5 active:scale-95"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Admin Zone</span>
-              </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/50 hover:text-emerald-500 transition-all shadow-2xs hover:-translate-y-0.5 active:scale-95"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="hidden sm:inline">Admin Zone</span>
+                  <span className="sm:hidden">Admin</span>
+                </Link>
               </Magnetic>
 
-              <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1"></div>
+              <div className="hidden md:block h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1"></div>
 
               {/* Theme Toggle Button */}
               <Magnetic>
-              <button
-                onClick={toggleDarkMode}
-                aria-label="Toggle Theme"
-                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-200 dark:border-slate-800 shadow-2xs hover:scale-110 active:scale-90"
-              >
-                {darkMode ? (
-                  <Sun key="sun" className="w-4 h-4 text-amber-400 anim-rotate-in" />
-                ) : (
-                  <Moon key="moon" className="w-4 h-4 text-slate-600 anim-rotate-in" />
-                )}
-              </button>
+                <button
+                  onClick={toggleDarkMode}
+                  aria-label="Toggle Theme"
+                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-200 dark:border-slate-800 shadow-2xs hover:scale-110 active:scale-90"
+                >
+                  {darkMode ? (
+                    <Sun key="sun" className="w-4 h-4 text-amber-400 anim-rotate-in" />
+                  ) : (
+                    <Moon key="moon" className="w-4 h-4 text-slate-600 anim-rotate-in" />
+                  )}
+                </button>
               </Magnetic>
             </nav>
 
