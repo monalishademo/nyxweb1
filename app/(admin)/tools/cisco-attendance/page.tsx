@@ -3,6 +3,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +23,10 @@ import {
   ZoomOut,
   Maximize2,
 } from 'lucide-react';
+
+// ==========================================
+// 1. INTERFACES & CONFIG
+// ==========================================
 
 interface Student {
   sno: number;
@@ -66,6 +71,10 @@ const FIXED_COURSE = 'CYBER AWARENESS AI BASIC';
 const TRAINERS = ['SULLAB SINHAMAHAPATRA', 'CHIRANJIT MUKHERJEE', 'MINAKSHI ABHYANKAR'];
 const ADDRESS_MAX_WIDTH_PX = 700;
 
+const LOGO_URL = '/niit-logo.png';
+const DATA_FONT_URL = '/fonts/cambria.ttf';
+const TEMPLATE_URL = '/templates/attendance-template.pdf';
+
 const COL = {
   firstName: 1,
   lastName: 2,
@@ -90,6 +99,161 @@ const DEFAULT_META: BatchMetadata = {
   spocNameMobile: '',
   spocEmail: '',
 };
+
+// ==========================================
+// 2. PDF TEMPLATE ENGINE (Merged from TS)
+// ==========================================
+
+const SRC_W = 792;
+const SRC_H = 612;
+const COL_X = [55.74, 241.86, 299.94, 354.3, 531.66, 673.14];
+const COLS = [30.84, ...COL_X, 769.8];
+const INFO_L_X = 241.86 + 3;
+const INFO_L_MAX = 531.66 - INFO_L_X - 3;
+const INFO_R_X = 673.14 + 3;
+const INFO_R_MAX = 769.8 - INFO_R_X - 3;
+
+const INFO_BASE_LEFT = [52.56, 69.96, 87.36, 104.76];
+const INFO_BASE_RIGHT = [53.04, 70.44, 87.84, 105.24];
+const FS = 7.33;
+const rowBase = (i: number) => (i < 24 ? 136.92 + 13.92 * i : 470.4);
+
+async function loadBytes(url: string): Promise<Uint8Array | undefined> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return undefined;
+  }
+}
+
+interface PdfAssets {
+  templateBytes: Uint8Array;
+  dataFontBytes?: Uint8Array;
+}
+
+async function loadPdfAssets(): Promise<PdfAssets> {
+  const [templateBytes, dataFontBytes] = await Promise.all([
+    loadBytes(TEMPLATE_URL),
+    loadBytes(DATA_FONT_URL),
+  ]);
+  if (!templateBytes) {
+    throw new Error(`Template PDF not found at ${TEMPLATE_URL}. Please place attendance-template.pdf in /public/templates/`);
+  }
+  return { templateBytes, dataFontBytes };
+}
+
+async function buildAttendancePdfBlob(
+  meta: BatchMetadata,
+  students: Student[],
+  assets: PdfAssets,
+  targetPage: 'letter' | 'a4' = 'a4'
+): Promise<Blob> {
+  // Dynamically import pdf-lib and fontkit so Next.js never loads them on SSR
+  const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+  const fontkit = (await import('@pdf-lib/fontkit')).default;
+
+  const out = await PDFDocument.create();
+  out.registerFontkit(fontkit);
+
+  const tplDoc = await PDFDocument.load(assets.templateBytes);
+  const [tplPage] = await out.embedPdf(tplDoc, [0]);
+
+  let dataFont;
+  if (assets.dataFontBytes) {
+    try {
+      dataFont = await out.embedFont(assets.dataFontBytes, { subset: true });
+    } catch {
+      dataFont = await out.embedFont(StandardFonts.Helvetica);
+    }
+  } else {
+    dataFont = await out.embedFont(StandardFonts.Helvetica);
+  }
+  const snoFont = await out.embedFont(StandardFonts.HelveticaBold);
+
+  const pageW = targetPage === 'letter' ? SRC_W : 841.89;
+  const pageH = targetPage === 'letter' ? SRC_H : 595.28;
+  const s = Math.min(pageW / SRC_W, pageH / SRC_H);
+  const ox = (pageW - SRC_W * s) / 2;
+  const oy = (pageH - SRC_H * s) / 2;
+
+  const PX = (x: number) => ox + x * s;
+  const PY = (yTop: number) => pageH - (oy + yTop * s);
+  const black = rgb(0, 0, 0);
+
+  const shrinkToFit = (font: any, text: string, size: number, maxW: number): number => {
+    let curSize = size;
+    while (curSize > size * 0.6 && font.widthOfTextAtSize(text, curSize) > maxW) {
+      curSize -= 0.1;
+    }
+    return curSize;
+  };
+
+  const put = (page: any, text: string, x: number, base: number, maxW: number, align: 'l' | 'c' = 'l') => {
+    if (!text) return;
+    const size = shrinkToFit(dataFont, text, FS, maxW);
+    const w = dataFont.widthOfTextAtSize(text, size);
+    const px = align === 'c' ? x + (maxW - w) / 2 : x;
+    page.drawText(text, { x: PX(px), y: PY(base), size: size * s, font: dataFont, color: black });
+  };
+
+  const pages = chunk(students, ROWS_PER_PAGE);
+
+  pages.forEach((pageStudents, pageIdx) => {
+    const page = out.addPage([pageW, pageH]);
+    page.drawPage(tplPage, { x: ox, y: oy, width: SRC_W * s, height: SRC_H * s });
+
+    // Re-number Serial Numbers for pages 2+
+    if (pageIdx > 0) {
+      for (let i = 0; i < ROWS_PER_PAGE; i += 1) {
+        const base = rowBase(i);
+        page.drawRectangle({
+          x: PX(34),
+          y: PY(base + 1.2),
+          width: (53.5 - 34) * s,
+          height: 7.4 * s,
+          color: rgb(1, 1, 1),
+        });
+        const no = String(pageIdx * ROWS_PER_PAGE + i + 1);
+        const w = snoFont.widthOfTextAtSize(no, FS);
+        const cx = (COLS[0] + COLS[1]) / 2;
+        page.drawText(no, { x: PX(cx - w / 2), y: PY(base), size: FS * s, font: snoFont, color: black });
+      }
+    }
+
+    // Write Header values
+    const leftVals = [meta.instituteName, meta.instituteAddress, meta.trainerName, meta.spocNameMobile];
+    const rightVals = [meta.courseName, meta.workshopDate, meta.scheduledTime, meta.spocEmail];
+    for (let i = 0; i < 4; i += 1) {
+      put(page, leftVals[i], INFO_L_X, INFO_BASE_LEFT[i], INFO_L_MAX);
+      put(page, rightVals[i], INFO_R_X, INFO_BASE_RIGHT[i], INFO_R_MAX);
+    }
+
+    // Write Student records
+    pageStudents.forEach((st, i) => {
+      const base = rowBase(i);
+      const cell = (v: string, c: number, align: 'l' | 'c') => {
+        const left = COLS[c];
+        const right = COLS[c + 1];
+        if (align === 'l') put(page, v, left + 4, base, right - left - 6, 'l');
+        else put(page, v, left + 3, base, right - left - 6, 'c');
+      };
+      cell(st.name, 1, 'l');
+      cell(st.gender, 2, 'c');
+      cell(st.age, 3, 'c');
+      cell(st.guardian, 4, 'l');
+      cell(st.mobile, 5, 'c');
+    });
+  });
+
+  const bytes = await out.save();
+  return new Blob([bytes as BlobPart], { type: 'application/pdf' });
+}
+
+// ==========================================
+// 3. UTILITY FUNCTIONS
+// ==========================================
 
 function textWidthPx(text: string): number {
   if (typeof document === 'undefined') return text.length * 6;
@@ -129,14 +293,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return chunks.length > 0 ? chunks : [[]];
 }
 
-function esc(v: string): string {
-  return v
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function makeSafeName(v: string): string {
   return v
     .replace(/[\\/:*?"<>|]+/g, '-')
@@ -163,287 +319,6 @@ function formatPdfFilename(meta: BatchMetadata, batchNo: number, totalBatches: n
   return `${name}.pdf`;
 }
 
-function buildSheetHtml(h: BatchMetadata, pageStudents: Student[], pageIndex: number, logoSrc: string): string {
-  const rows = Array.from({ length: ROWS_PER_PAGE }, (_, i) => {
-    const student = pageStudents[i];
-    const sno = pageIndex * ROWS_PER_PAGE + i + 1;
-    return `<tr class="cisco-row">
-      <td class="cisco-c">${sno}</td>
-      <td class="cisco-l">${esc(student?.name || '')}</td>
-      <td class="cisco-c">${esc(student?.gender || '')}</td>
-      <td class="cisco-c">${esc(student?.age || '')}</td>
-      <td class="cisco-l">${esc(student?.guardian || '')}</td>
-      <td class="cisco-c">${esc(student?.mobile || '')}</td>
-      <td></td>
-    </tr>`;
-  }).join('');
-
-  return `<div class="cisco-sheet" style="margin:0;box-shadow:none;">
-    <table>
-      <colgroup>
-        <col style="width:3.38%" />
-        <col style="width:25.17%" />
-        <col style="width:7.86%" />
-        <col style="width:7.35%" />
-        <col style="width:23.99%" />
-        <col style="width:19.14%" />
-        <col style="width:13.10%" />
-      </colgroup>
-      <tbody>
-        <tr>
-          <td class="cisco-title" colspan="7">
-            Attendance Sheet :: Non-LMS
-            <img class="cisco-logo" src="${esc(logoSrc)}" alt="NIIT Foundation" />
-          </td>
-        </tr>
-        <tr>
-          <td class="cisco-label" colspan="2">&nbsp;Institute Name:</td>
-          <td class="cisco-value" colspan="3">${esc(h.instituteName)}</td>
-          <td class="cisco-label">&nbsp;Course Name:</td>
-          <td class="cisco-value">${esc(h.courseName)}</td>
-        </tr>
-        <tr>
-          <td class="cisco-label" colspan="2">&nbsp;Institute&nbsp;&nbsp;Address:</td>
-          <td class="cisco-value" colspan="3">${esc(h.instituteAddress)}</td>
-          <td class="cisco-label">&nbsp;Workshop Date</td>
-          <td class="cisco-value">${esc(h.workshopDate)}</td>
-        </tr>
-        <tr>
-          <td class="cisco-label" colspan="2">&nbsp;Trainer Name:</td>
-          <td class="cisco-value" colspan="3">${esc(h.trainerName)}</td>
-          <td class="cisco-label">&nbsp;Scheduled Time:</td>
-          <td class="cisco-value">${esc(h.scheduledTime)}</td>
-        </tr>
-        <tr>
-          <td class="cisco-label" colspan="2">&nbsp;Org SPOC Name &amp; Mobile No.</td>
-          <td class="cisco-value" colspan="3">${esc(h.spocNameMobile)}</td>
-          <td class="cisco-label">&nbsp;Org SPOC Email ID</td>
-          <td class="cisco-value">${esc(h.spocEmail)}</td>
-        </tr>
-        <tr class="cisco-head">
-          <th>Sno.</th>
-          <th>Student Name</th>
-          <th>Gender</th>
-          <th>Age</th>
-          <th>Guardians Name</th>
-          <th>Mobile Number</th>
-          <th>Signatures</th>
-        </tr>
-        ${rows}
-      </tbody>
-    </table>
-    <div class="cisco-below">
-      <div class="cisco-sig-trainer">
-        <div class="cisco-sig-line cisco-sig-line-t"></div>
-        <div>Trainer&apos;s Signature</div>
-      </div>
-      <div class="cisco-sig-coord">
-        <div class="cisco-sig-line cisco-sig-line-c"></div>
-        <div>Institute/Organization Coordinator&apos;s Signature</div>
-        <div class="cisco-sig-name">Name:</div>
-      </div>
-      <div class="cisco-notes-left">
-        <div class="cisco-notes-title">STUDENT DECLARATION</div>
-        <p class="cisco-decl">
-          * By signing in the attendance sheet, I confirm that I have attended the above training session and the information
-          provided by me is true and correct. I also give my consent to the organisation to use my personal data for training,
-          assessment, certification.
-        </p>
-      </div>
-      <div class="cisco-notes-right">
-        <div class="cisco-notes-title">IMPORTANT INSTRUCTIONS</div>
-        <div class="cisco-inst">
-          # Only students physically present must sign<br />
-          # No proxy attendance allowed<br />
-          # No overwriting permitted<br />
-          # In case of correction, strike once and countersign by trainer<br />
-          # Signature is mandatory<br />
-          # This document is an official record and will be used for audit &amp; reporting
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function loadLogoSrc(): Promise<string> {
-  try {
-    const res = await fetch('/niit-logo.png');
-    if (!res.ok) return '/niit-logo.png';
-    const blob = await res.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || '/niit-logo.png'));
-      reader.onerror = () => reject(new Error('logo'));
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return '/niit-logo.png';
-  }
-}
-
-const SHEET_CAPTURE_CSS = `
-  .cisco-sheet {
-    width: 297mm;
-    height: 209mm;
-    min-height: 0;
-    background: #fff;
-    color: #000;
-    padding: 3mm 8mm;
-    margin: 0;
-    box-sizing: border-box;
-    box-shadow: none;
-    font-family: Cambria, Georgia, 'Times New Roman', serif;
-    font-synthesis: none;
-    overflow: hidden;
-  }
-  .cisco-sheet table, .cisco-sheet td, .cisco-sheet th, .cisco-sheet div, .cisco-sheet p {
-    font-family: Cambria, Georgia, 'Times New Roman', serif !important;
-  }
-  .cisco-sheet table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1.2px solid #000 !important;
-    table-layout: fixed;
-  }
-  .cisco-sheet td, .cisco-sheet th {
-    border: 0.6px solid #000 !important;
-    vertical-align: middle;
-    overflow: hidden;
-    color: #000;
-  }
-  .cisco-title {
-    position: relative;
-    height: 32.5pt;
-    text-align: center;
-    font-size: 11.06pt;
-    font-weight: 700;
-    padding: 0 90px 0 8px;
-  }
-  .cisco-logo {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 29pt !important;
-    width: auto !important;
-    max-width: 90px;
-    object-fit: contain;
-  }
-  .cisco-label, .cisco-value {
-    font-size: 7.33pt;
-    height: 17.4pt;
-    text-align: left;
-    padding: 0 3px;
-  }
-  .cisco-label { font-weight: 700; white-space: nowrap; }
-  .cisco-value {
-    font-weight: 400;
-    white-space: normal;
-    word-break: normal;
-    overflow-wrap: anywhere;
-    line-height: 8pt;
-  }
-  .cisco-head th {
-    background: #d9d9d9 !important;
-    font-size: 7.33pt;
-    font-weight: 700;
-    height: 14pt;
-    text-align: center;
-    padding: 0 2px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .cisco-row td {
-    height: 13.92pt;
-    font-size: 7.33pt;
-    font-weight: 400;
-    padding: 0 4px;
-    white-space: nowrap;
-  }
-  .cisco-c { text-align: center; }
-  .cisco-l { text-align: left; }
-  .cisco-below { position: relative; width: 100%; height: 102pt; }
-  .cisco-sig-trainer, .cisco-sig-coord {
-    position: absolute;
-    top: 8pt;
-    font-size: 7.33pt;
-    font-weight: 700;
-    color: #000;
-  }
-  .cisco-sig-trainer { left: 26.4pt; }
-  .cisco-sig-coord { left: 67.75%; }
-  .cisco-sig-line { border-top: 1.2px solid #000; margin-bottom: 3.3pt; }
-  .cisco-sig-line-t { width: 74.6pt; }
-  .cisco-sig-line-c { width: 160.8pt; }
-  .cisco-sig-name { margin-top: 9pt; font-size: 7.33pt; font-weight: 700; }
-  .cisco-notes-left { position: absolute; left: 1.5pt; top: 42pt; width: 41.4%; }
-  .cisco-notes-right { position: absolute; left: 67.75%; top: 42pt; width: 32%; }
-  .cisco-notes-title {
-    font-size: 6.73pt;
-    font-weight: 700;
-    font-style: italic;
-    text-transform: uppercase;
-    margin-bottom: 2pt;
-    color: #000;
-  }
-  .cisco-decl { font-size: 6.13pt; font-style: italic; line-height: 7.2pt; color: #000; }
-  .cisco-inst { font-size: 6.13pt; font-style: italic; line-height: 8.2pt; color: #000; padding-left: 7.4pt; }
-`;
-
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const found = document.querySelector(`script[data-pulse-lib="${src}"]`);
-    if (found) {
-      if (found.getAttribute('data-ready') === '1') {
-        resolve();
-        return;
-      }
-      found.addEventListener('load', () => resolve());
-      found.addEventListener('error', () => reject(new Error(src)));
-      return;
-    }
-    const s = document.createElement('script');
-    s.src = src;
-    s.async = true;
-    s.dataset.pulseLib = src;
-    s.onload = () => {
-      s.dataset.ready = '1';
-      resolve();
-    };
-    s.onerror = () => reject(new Error(src));
-    document.head.appendChild(s);
-  });
-}
-
-async function loadZipLibs(): Promise<{
-  JSZip: new () => { file: (name: string, data: Blob) => void; generateAsync: (opts: { type: 'blob' }) => Promise<Blob> };
-  html2canvas: (el: HTMLElement, opts?: Record<string, unknown>) => Promise<HTMLCanvasElement>;
-  JsPDF: new (opts: Record<string, unknown>) => {
-    addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void;
-    addPage: () => void;
-    output: (type: 'blob') => Blob;
-  };
-}> {
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-  const w = window as unknown as {
-    JSZip?: new () => { file: (name: string, data: Blob) => void; generateAsync: (opts: { type: 'blob' }) => Promise<Blob> };
-    html2canvas?: (el: HTMLElement, opts?: Record<string, unknown>) => Promise<HTMLCanvasElement>;
-    jspdf?: {
-      jsPDF: new (opts: Record<string, unknown>) => {
-        addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void;
-        addPage: () => void;
-        output: (type: 'blob') => Blob;
-      };
-    };
-  };
-  if (!w.JSZip || !w.html2canvas || !w.jspdf?.jsPDF) {
-    throw new Error('Failed to load required PDF rendering engines.');
-  }
-  return { JSZip: w.JSZip, html2canvas: w.html2canvas, JsPDF: w.jspdf.jsPDF };
-}
-
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -451,64 +326,6 @@ function downloadBlob(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
-
-async function waitForImages(root: HTMLElement): Promise<void> {
-  const imgs = Array.from(root.querySelectorAll('img'));
-  await Promise.all(
-    imgs.map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete) {
-            resolve();
-            return;
-          }
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        })
-    )
-  );
-}
-
-async function makePdfBlob(
-  h: BatchMetadata,
-  partStudents: Student[],
-  logoSrc: string,
-  html2canvas: (el: HTMLElement, opts?: Record<string, unknown>) => Promise<HTMLCanvasElement>,
-  JsPDF: new (opts: Record<string, unknown>) => {
-    addImage: (img: string, format: string, x: number, y: number, w: number, h: number) => void;
-    addPage: () => void;
-    output: (type: 'blob') => Blob;
-  }
-): Promise<Blob> {
-  const pages = chunk(partStudents, ROWS_PER_PAGE);
-  const host = document.createElement('div');
-  host.setAttribute('aria-hidden', 'true');
-  host.style.cssText =
-    'position:fixed;left:-12000px;top:0;width:297mm;background:#fff;z-index:-1;pointer-events:none;';
-  host.innerHTML = `<style>${SHEET_CAPTURE_CSS}</style>${pages
-    .map((pageStudents, pageIndex) => buildSheetHtml(h, pageStudents, pageIndex, logoSrc))
-    .join('')}`;
-  document.body.appendChild(host);
-  await waitForImages(host);
-
-  const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-  const sheets = Array.from(host.querySelectorAll<HTMLElement>('.cisco-sheet'));
-  for (let i = 0; i < sheets.length; i += 1) {
-    const canvas = await html2canvas(sheets[i], {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      width: sheets[i].offsetWidth,
-      height: sheets[i].offsetHeight,
-    });
-    const img = canvas.toDataURL('image/jpeg', 0.92);
-    if (i > 0) pdf.addPage();
-    pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
-  }
-  document.body.removeChild(host);
-  return pdf.output('blob');
 }
 
 function partitionStudents(students: Student[], sizes: number[]): Student[][] {
@@ -535,6 +352,10 @@ const inputClass =
 
 const labelClass = 'mb-1 block text-xs font-medium text-slate-300';
 
+// ==========================================
+// 4. MAIN COMPONENT
+// ==========================================
+
 export default function PulseAttendanceGenerator() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -548,6 +369,7 @@ export default function PulseAttendanceGenerator() {
 
   const [zipBusy, setZipBusy] = useState<boolean>(false);
   const [singleBusyId, setSingleBusyId] = useState<string | null>(null);
+  const [printBusy, setPrintBusy] = useState<boolean>(false);
   const [processStatus, setProcessStatus] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -754,7 +576,7 @@ export default function PulseAttendanceGenerator() {
     return list;
   }, [groups]);
 
-  const handlePrintCurrent = () => {
+  const printHtmlFallback = () => {
     if (!activeBatch) return;
     const oldTitle = document.title;
     document.title = formatPdfFilename(activeBatch.meta, activeBatch.batchNumber, activeBatch.totalBatches).replace(
@@ -767,16 +589,46 @@ export default function PulseAttendanceGenerator() {
     }, 1000);
   };
 
+  const handlePrintCurrent = async () => {
+    if (!activeBatch || printBusy) return;
+    setPrintBusy(true);
+    setErrorMessage('');
+    try {
+      const assets = await loadPdfAssets();
+      const blob = await buildAttendancePdfBlob(activeBatch.meta, activeBatch.students, assets);
+      const url = URL.createObjectURL(blob);
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+      frame.src = url;
+      frame.onload = () => {
+        try {
+          frame.contentWindow?.focus();
+          frame.contentWindow?.print();
+        } catch {
+          printHtmlFallback();
+        }
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          frame.remove();
+        }, 60000);
+      };
+      document.body.appendChild(frame);
+    } catch {
+      printHtmlFallback();
+    } finally {
+      setPrintBusy(false);
+    }
+  };
+
   const handleDownloadSinglePdf = async (item: (typeof flatPdfList)[number]) => {
     setSingleBusyId(item.key);
     setErrorMessage('');
     try {
-      const { html2canvas, JsPDF } = await loadZipLibs();
-      const logoSrc = await loadLogoSrc();
-      const blob = await makePdfBlob(item.batch.meta, item.batch.students, logoSrc, html2canvas, JsPDF);
+      const assets = await loadPdfAssets();
+      const blob = await buildAttendancePdfBlob(item.batch.meta, item.batch.students, assets);
       downloadBlob(blob, item.filename);
     } catch {
-      setErrorMessage('Could not generate PDF. Check network connectivity for rendering engines.');
+      setErrorMessage('Could not generate PDF. Check that /templates/attendance-template.pdf exists in /public.');
     } finally {
       setSingleBusyId(null);
     }
@@ -786,17 +638,17 @@ export default function PulseAttendanceGenerator() {
     if (flatPdfList.length === 0 || zipBusy) return;
     setZipBusy(true);
     setErrorMessage('');
-    setProcessStatus('Loading PDF rendering engines...');
+    setProcessStatus('Preparing PDF engine...');
     try {
-      const { JSZip, html2canvas, JsPDF } = await loadZipLibs();
-      const logoSrc = await loadLogoSrc();
+      const assets = await loadPdfAssets();
       const zip = new JSZip();
 
       for (let i = 0; i < flatPdfList.length; i += 1) {
         const item = flatPdfList[i];
         setProcessStatus(`Rendering PDF ${i + 1} of ${flatPdfList.length}...`);
-        const blob = await makePdfBlob(item.batch.meta, item.batch.students, logoSrc, html2canvas, JsPDF);
+        const blob = await buildAttendancePdfBlob(item.batch.meta, item.batch.students, assets);
         zip.file(item.filename, blob);
+        await new Promise((r) => setTimeout(r, 0));
       }
 
       setProcessStatus('Archiving package into ZIP...');
@@ -804,7 +656,7 @@ export default function PulseAttendanceGenerator() {
       downloadBlob(zipBlob, 'NYX_CISCO_NON_LMS_ATTENDANCE_PACK.zip');
       setProcessStatus('');
     } catch {
-      setErrorMessage('Failed to compile ZIP archive. Check network access and try again.');
+      setErrorMessage('Failed to compile ZIP archive. Please try again.');
       setProcessStatus('');
     } finally {
       setZipBusy(false);
@@ -820,6 +672,7 @@ export default function PulseAttendanceGenerator() {
     setUploadedName('');
     setZipBusy(false);
     setSingleBusyId(null);
+    setPrintBusy(false);
     setProcessStatus('');
     setErrorMessage('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -831,19 +684,19 @@ export default function PulseAttendanceGenerator() {
     <div className="cisco-sheet" key={`${pageIndex}-${h.instituteName}`}>
       <table>
         <colgroup>
-          <col style={{ width: '3.38%' }} />
-          <col style={{ width: '25.17%' }} />
+          <col style={{ width: '3.37%' }} />
+          <col style={{ width: '25.19%' }} />
           <col style={{ width: '7.86%' }} />
-          <col style={{ width: '7.35%' }} />
-          <col style={{ width: '23.99%' }} />
-          <col style={{ width: '19.14%' }} />
-          <col style={{ width: '13.10%' }} />
+          <col style={{ width: '7.36%' }} />
+          <col style={{ width: '24.00%' }} />
+          <col style={{ width: '19.15%' }} />
+          <col style={{ width: '13.08%' }} />
         </colgroup>
         <tbody>
           <tr>
             <td className="cisco-title" colSpan={7}>
               Attendance Sheet :: Non-LMS
-              <img className="cisco-logo" src="/niit-logo.png" alt="NIIT Foundation" />
+              <img className="cisco-logo" src={LOGO_URL} alt="NIIT Foundation" />
             </td>
           </tr>
           <tr>
@@ -884,12 +737,12 @@ export default function PulseAttendanceGenerator() {
             const sno = pageIndex * ROWS_PER_PAGE + i + 1;
             return (
               <tr className="cisco-row" key={i}>
-                <td className="cisco-c">{sno}</td>
-                <td className="cisco-l">{student?.name || ''}</td>
-                <td className="cisco-c">{student?.gender || ''}</td>
-                <td className="cisco-c">{student?.age || ''}</td>
-                <td className="cisco-l">{student?.guardian || ''}</td>
-                <td className="cisco-c">{student?.mobile || ''}</td>
+                <td className="cisco-sno">{sno}</td>
+                <td className="cisco-d cisco-l">{student?.name || ''}</td>
+                <td className="cisco-d cisco-c">{student?.gender || ''}</td>
+                <td className="cisco-d cisco-c">{student?.age || ''}</td>
+                <td className="cisco-d cisco-l">{student?.guardian || ''}</td>
+                <td className="cisco-d cisco-c">{student?.mobile || ''}</td>
                 <td></td>
               </tr>
             );
@@ -969,9 +822,10 @@ export default function PulseAttendanceGenerator() {
               <button
                 type="button"
                 onClick={handlePrintCurrent}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+                disabled={printBusy}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-60"
               >
-                <Printer className="h-4 w-4" />
+                {printBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                 Print Selected Batch
               </button>
             )}
@@ -979,7 +833,7 @@ export default function PulseAttendanceGenerator() {
         </div>
       </header>
 
-      {/* Main Grid: Wider Sidebar (620px) to maximize preview efficiency */}
+      {/* Main Grid */}
       <div className="print:hidden mx-auto grid max-w-[2100px] grid-cols-1 xl:grid-cols-[620px_minmax(0,1fr)] 2xl:grid-cols-[660px_minmax(0,1fr)]">
         {/* Left Side: Wizard Stepper & Form */}
         <aside className="border-b border-slate-800 bg-slate-950/60 p-5 xl:h-[calc(100vh-57px)] xl:overflow-y-auto xl:border-b-0 xl:border-r">
@@ -1096,7 +950,6 @@ export default function PulseAttendanceGenerator() {
                   <h2 className="font-semibold text-white text-sm">Step 2: Allocate Students Per Batch</h2>
                 </div>
 
-                {/* Institute Selection */}
                 <div>
                   <label className={labelClass}>Active Institute</label>
                   <select
@@ -1119,14 +972,12 @@ export default function PulseAttendanceGenerator() {
                   </select>
                 </div>
 
-                {/* Batch Sizes Definition */}
                 <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span className="text-xs font-medium text-slate-300">Target Student Counts Per Batch</span>
                     <span className="text-xs font-semibold text-emerald-400">Total in file: {rawTotal}</span>
                   </div>
 
-                  {/* Math Equation Formula */}
                   <div className="rounded-md bg-slate-900/90 border border-slate-800 px-3 py-2 text-xs">
                     <div className="flex items-center justify-between text-slate-300 font-mono">
                       <span>Equation:</span>
@@ -1143,7 +994,6 @@ export default function PulseAttendanceGenerator() {
                     </div>
                   </div>
 
-                  {/* Batch Inputs */}
                   <div className="space-y-2 pt-1">
                     {batchSizeInputs.map((val, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -1208,7 +1058,6 @@ export default function PulseAttendanceGenerator() {
                   </div>
                 </div>
 
-                {/* Formed Batches */}
                 <div>
                   <span className="text-xs text-slate-400 block mb-1.5 font-medium">Formed Batches:</span>
                   <div className="flex flex-wrap gap-1.5">
@@ -1250,7 +1099,7 @@ export default function PulseAttendanceGenerator() {
             </div>
           )}
 
-          {/* STEP 3: BATCH METADATA ONLY */}
+          {/* STEP 3: BATCH METADATA */}
           {currentStep === 3 && (
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-4">
@@ -1264,7 +1113,6 @@ export default function PulseAttendanceGenerator() {
                   </span>
                 </div>
 
-                {/* Institute & Batch Selector */}
                 <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-800">
                   <div>
                     <label className={labelClass}>Institute</label>
@@ -1299,7 +1147,6 @@ export default function PulseAttendanceGenerator() {
                   </div>
                 </div>
 
-                {/* Metadata Fields */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Workshop Date (DD/MM/YYYY)</label>
@@ -1376,7 +1223,6 @@ export default function PulseAttendanceGenerator() {
                   </div>
                 </div>
 
-                {/* Mass Actions */}
                 <div className="pt-2 flex flex-col gap-2">
                   <button
                     type="button"
@@ -1429,7 +1275,6 @@ export default function PulseAttendanceGenerator() {
                   <span className="text-xs text-slate-400">{flatPdfList.length} Total PDFs</span>
                 </div>
 
-                {/* Bulk Archive Export */}
                 <div className="rounded-xl border border-emerald-700/50 bg-emerald-950/20 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1450,7 +1295,6 @@ export default function PulseAttendanceGenerator() {
                   </button>
                 </div>
 
-                {/* Individual PDF List */}
                 <div className="space-y-2">
                   <span className="text-xs font-medium text-slate-300 block">Individual PDF Files</span>
                   <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
@@ -1504,9 +1348,8 @@ export default function PulseAttendanceGenerator() {
           )}
         </aside>
 
-        {/* Right Side: Live Sheet Preview with Zoom Controls */}
+        {/* Right Side: Live Sheet Preview */}
         <section className="min-w-0 bg-slate-900/40 xl:h-[calc(100vh-57px)] xl:overflow-auto flex flex-col">
-          {/* Preview Navigation & Zoom Toolbar */}
           <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-800 bg-slate-950/95 px-4 py-2 backdrop-blur">
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold text-slate-200">Live Preview</span>
@@ -1517,7 +1360,6 @@ export default function PulseAttendanceGenerator() {
               )}
             </div>
 
-            {/* Interactive Zoom Controls */}
             <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-lg px-2 py-1 shadow-sm">
               <button
                 type="button"
@@ -1564,7 +1406,6 @@ export default function PulseAttendanceGenerator() {
             </div>
           </div>
 
-          {/* Scaled Preview Canvas */}
           <div className="flex-1 overflow-auto p-4 flex flex-col items-center">
             {hasData && activeBatch ? (
               <div
@@ -1590,12 +1431,11 @@ export default function PulseAttendanceGenerator() {
         </section>
       </div>
 
-      {/* Hidden container strictly for native system printing */}
+      {/* Fallback container for printing */}
       <div className="cisco-sheets cisco-print-only hidden">
         {activeBatch && studentPages.map((pageStudents, pageIndex) => renderSheet(currentMeta, pageStudents, pageIndex))}
       </div>
 
-      {/* CSS */}
       <style>{`
         .cisco-sheet {
           width: 297mm;
@@ -1606,7 +1446,7 @@ export default function PulseAttendanceGenerator() {
           margin: 0 auto 24px;
           box-sizing: border-box;
           box-shadow: 0 12px 28px rgba(0,0,0,0.4);
-          font-family: Cambria, Georgia, 'Times New Roman', serif;
+          font-family: Arial, Helvetica, sans-serif;
           font-synthesis: none;
         }
         .cisco-sheet table,
@@ -1614,7 +1454,7 @@ export default function PulseAttendanceGenerator() {
         .cisco-sheet th,
         .cisco-sheet div,
         .cisco-sheet p {
-          font-family: Cambria, Georgia, 'Times New Roman', serif !important;
+          font-family: Arial, Helvetica, sans-serif;
         }
         .cisco-sheet table {
           width: 100%;
@@ -1658,8 +1498,12 @@ export default function PulseAttendanceGenerator() {
           font-weight: 700;
           white-space: nowrap;
         }
-        .cisco-value {
+        .cisco-sheet .cisco-value,
+        .cisco-sheet .cisco-d {
+          font-family: Cambria, Caladea, Georgia, 'Times New Roman', serif;
           font-weight: 400;
+        }
+        .cisco-value {
           white-space: normal;
           word-break: normal;
           overflow-wrap: anywhere;
@@ -1667,6 +1511,7 @@ export default function PulseAttendanceGenerator() {
         }
         .cisco-head th {
           background: #d9d9d9 !important;
+          font-family: Verdana, Geneva, sans-serif;
           font-size: 7.33pt;
           font-weight: 700;
           height: 14pt;
@@ -1682,6 +1527,7 @@ export default function PulseAttendanceGenerator() {
           padding: 0 4px;
           white-space: nowrap;
         }
+        .cisco-sno { text-align: center; font-weight: 700 !important; }
         .cisco-c { text-align: center; }
         .cisco-l { text-align: left; }
         .cisco-below {
