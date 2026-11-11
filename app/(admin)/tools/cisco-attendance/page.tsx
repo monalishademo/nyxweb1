@@ -115,7 +115,7 @@ const INFO_R_MAX = 769.8 - INFO_R_X - 3;
 
 const INFO_BASE_LEFT = [52.56, 69.96, 87.36, 104.76];
 const INFO_BASE_RIGHT = [53.04, 70.44, 87.84, 105.24];
-const FS = 7.33;
+const FS = 7.8;
 const rowBase = (i: number) => (i < 24 ? 136.92 + 13.92 * i : 470.4);
 
 async function loadBytes(url: string): Promise<Uint8Array | undefined> {
