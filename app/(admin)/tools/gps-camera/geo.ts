@@ -40,83 +40,156 @@ export function toPlusCode(lat: number, lon: number): string {
   return local.charAt(0) + local.slice(1).toLowerCase()
 }
 
-// Built-in offline fallback database so search never fails on localhost
-const LOCAL_PLACES: PlaceHit[] = [
-  {
-    displayName: 'Binpur-I, Paschim Medinipur, West Bengal, India',
-    locationName: 'Binpur-I, West Bengal, India',
-    address: '7J3W+X9, Binpur-I, West Bengal 721501, India',
-    latitude: '22.584861',
-    longitude: '87.049663',
-    countryCode: 'IN',
-    lat: 22.584861,
-    lon: 87.049663,
-  },
-  {
-    displayName: 'Lalgarh, Jhargram, West Bengal, India',
-    locationName: 'Lalgarh, West Bengal, India',
-    address: 'H2mx+vjr, Lalgarh, West Bengal 721516, India',
-    latitude: '22.584861',
-    longitude: '87.049663',
-    countryCode: 'IN',
-    lat: 22.584861,
-    lon: 87.049663,
-  },
-  {
-    displayName: 'Simlapal, Bankura, West Bengal, India',
-    locationName: 'Simlapal, Bankura, India',
-    address: 'V4RX+22, Simlapal, Bankura 722151, India',
-    latitude: '22.956200',
-    longitude: '87.082500',
-    countryCode: 'IN',
-    lat: 22.956200,
-    lon: 87.082500,
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+async function fetchJson(url: string, timeoutMs = 7000): Promise<any | null> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    // No custom headers: browsers block User-Agent, and extra headers can trigger CORS preflight failures.
+    const res = await fetch(url, { signal: ctrl.signal })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
   }
+}
+
+// Most useful place name first: village / town / city, then smaller or larger units.
+function pickPlace(addr: Record<string, string | undefined>): string {
+  return (
+    addr.village ||
+    addr.town ||
+    addr.city ||
+    addr.hamlet ||
+    addr.suburb ||
+    addr.neighbourhood ||
+    addr.municipality ||
+    addr.city_district ||
+    addr.county ||
+    addr.state_district ||
+    'Location'
+  )
+}
+
+function buildHit(
+  lat: number,
+  lon: number,
+  displayName: string,
+  place: string,
+  state: string,
+  postcode: string,
+  country: string,
+  countryCode: string,
+): PlaceHit {
+  const plus = toPlusCode(lat, lon)
+  return {
+    displayName,
+    locationName: [place, state, country].filter(Boolean).join(', '),
+    address: `${plus}, ${place}, ${state} ${postcode}, ${country}`.replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' '),
+    latitude: lat.toFixed(6),
+    longitude: lon.toFixed(6),
+    countryCode: (countryCode || 'in').toUpperCase(),
+    lat,
+    lon,
+  }
+}
+
+function fromNominatim(item: any, latOverride?: number, lonOverride?: number): PlaceHit {
+  const lat = latOverride ?? parseFloat(item.lat)
+  const lon = lonOverride ?? parseFloat(item.lon)
+  const addr = item.address || {}
+  return buildHit(
+    lat,
+    lon,
+    item.display_name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
+    pickPlace(addr),
+    addr.state || '',
+    addr.postcode || '',
+    addr.country || '',
+    addr.country_code || 'in',
+  )
+}
+
+function fromPhoton(f: any): PlaceHit | null {
+  const coords = f?.geometry?.coordinates
+  const p = f?.properties || {}
+  if (!Array.isArray(coords) || coords.length < 2) return null
+  const lon = Number(coords[0])
+  const lat = Number(coords[1])
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+  const place = p.name || p.city || p.district || p.county || 'Location'
+  const displayName = [p.name, p.district, p.county, p.state, p.country].filter(Boolean).join(', ')
+  return buildHit(lat, lon, displayName, place, p.state || '', p.postcode || '', p.country || '', p.countrycode || 'in')
+}
+
+function parseLatLon(q: string): { lat: number; lon: number } | null {
+  const m = q.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/)
+  if (!m) return null
+  const lat = parseFloat(m[1])
+  const lon = parseFloat(m[2])
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
+  return { lat, lon }
+}
+
+/* ------------------------------------------------------------------ */
+/* Offline fallback (only used when BOTH online services fail)         */
+/* ------------------------------------------------------------------ */
+
+function local(name: string, state: string, postcode: string, lat: number, lon: number): PlaceHit {
+  return buildHit(lat, lon, `${name}, ${state}, India`, name, state, postcode, 'India', 'IN')
+}
+
+const LOCAL_PLACES: PlaceHit[] = [
+  local('Binpur-I', 'West Bengal', '721501', 22.584861, 87.049663),
+  local('Lalgarh', 'West Bengal', '721516', 22.8717, 87.2911),
+  local('Simlapal', 'West Bengal', '722151', 22.9562, 87.0825),
 ]
 
-export async function searchPlaces(query: string): Promise<PlaceHit[]> {
-  const q = query.trim().toLowerCase()
-  if (q.length < 1) return LOCAL_PLACES
+/* ------------------------------------------------------------------ */
+/* Search                                                              */
+/* ------------------------------------------------------------------ */
 
-  // Try fetching from public nominatim API directly with proper user-agent headers
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=en&q=${encodeURIComponent(query)}`
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'MonkeyCodeApp/1.0' } })
-    if (res.ok) {
-      const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) {
-        return data.map((item: any) => {
-          const lat = parseFloat(item.lat)
-          const lon = parseFloat(item.lon)
-          const addr = item.address || {}
-          const place = addr.city || addr.town || addr.village || addr.county || 'Location'
-          const state = addr.state || ''
-          const country = addr.country || ''
-          const postcode = addr.postcode || ''
-          const plus = toPlusCode(lat, lon)
-          return {
-            displayName: item.display_name,
-            locationName: [place, state, country].filter(Boolean).join(', '),
-            address: `${plus}, ${place}, ${state} ${postcode}, ${country}`.replace(/,\s*,/g, ','),
-            latitude: lat.toFixed(6),
-            longitude: lon.toFixed(6),
-            countryCode: (addr.country_code || 'in').toUpperCase(),
-            lat,
-            lon,
-          }
-        })
-      }
-    }
-  } catch {
-    // Fallback to local search if network fails
+export async function searchPlaces(query: string): Promise<PlaceHit[]> {
+  const q = query.trim()
+  if (q.length < 2) return []
+
+  // 1) Typed coordinates, e.g. "22.5848, 87.0496"
+  const ll = parseLatLon(q)
+  if (ll) return [await reversePlace(ll.lat, ll.lon)]
+
+  const results: PlaceHit[] = []
+  const addUnique = (hit: PlaceHit) => {
+    const dup = results.some((r) => Math.abs(r.lat - hit.lat) < 0.002 && Math.abs(r.lon - hit.lon) < 0.002)
+    if (!dup) results.push(hit)
   }
 
-  // Filter local database
-  const filtered = LOCAL_PLACES.filter(p => 
-    p.displayName.toLowerCase().includes(q) || 
-    p.address.toLowerCase().includes(q)
+  // 2) Nominatim (OpenStreetMap)
+  const nom = await fetchJson(
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=10&accept-language=en&q=${encodeURIComponent(q)}`,
   )
-  return filtered.length > 0 ? filtered : LOCAL_PLACES
+  if (Array.isArray(nom)) nom.forEach((item) => addUnique(fromNominatim(item)))
+
+  // 3) Photon (OpenStreetMap, different index) when Nominatim finds little or fails
+  if (results.length < 3) {
+    const ph = await fetchJson(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lang=en`)
+    if (ph && Array.isArray(ph.features)) {
+      ph.features.forEach((f: any) => {
+        const hit = fromPhoton(f)
+        if (hit) addUnique(hit)
+      })
+    }
+  }
+
+  if (results.length > 0) return results.slice(0, 10)
+
+  // 4) Offline fallback: only real matches, never unrelated places
+  const lower = q.toLowerCase()
+  return LOCAL_PLACES.filter((p) => p.displayName.toLowerCase().includes(lower))
 }
 
 export function flagUrlFor(countryCode: string): string | null {
@@ -129,7 +202,7 @@ export function placeFromCoords(lat: number, lon: number, countryCode = 'IN'): P
   return {
     displayName: `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
     locationName: 'Selected location',
-    address: `${plus}, West Bengal, India`,
+    address: plus,
     latitude: lat.toFixed(6),
     longitude: lon.toFixed(6),
     countryCode,
@@ -139,32 +212,18 @@ export function placeFromCoords(lat: number, lon: number, countryCode = 'IN'): P
 }
 
 export async function reversePlace(lat: number, lon: number): Promise<PlaceHit> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=en&lat=${lat}&lon=${lon}`
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'MonkeyCodeApp/1.0' } })
-    if (res.ok) {
-      const item = await res.json()
-      if (item && item.display_name) {
-        const addr = item.address || {}
-        const place = addr.city || addr.town || addr.village || addr.county || 'Location'
-        const state = addr.state || ''
-        const country = addr.country || ''
-        const postcode = addr.postcode || ''
-        const plus = toPlusCode(lat, lon)
-        return {
-          displayName: item.display_name,
-          locationName: [place, state, country].filter(Boolean).join(', '),
-          address: `${plus}, ${place}, ${state} ${postcode}, ${country}`.replace(/,\s*,/g, ','),
-          latitude: lat.toFixed(6),
-          longitude: lon.toFixed(6),
-          countryCode: (addr.country_code || 'in').toUpperCase(),
-          lat,
-          lon,
-        }
-      }
-    }
-  } catch {
-    // fallback
+  // Nominatim reverse at the most detailed level (zoom 18 = house / village)
+  const nom = await fetchJson(
+    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=en&lat=${lat}&lon=${lon}`,
+  )
+  if (nom && nom.display_name) return fromNominatim(nom, lat, lon)
+
+  // Photon reverse as backup
+  const ph = await fetchJson(`https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}&lang=en`)
+  if (ph && Array.isArray(ph.features) && ph.features[0]) {
+    const hit = fromPhoton(ph.features[0])
+    if (hit) return { ...hit, lat, lon, latitude: lat.toFixed(6), longitude: lon.toFixed(6) }
   }
+
   return placeFromCoords(lat, lon)
 }

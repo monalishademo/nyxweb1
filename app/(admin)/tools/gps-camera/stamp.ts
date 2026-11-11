@@ -108,17 +108,51 @@ function drawStylizedSatelliteMap(ctx: CanvasRenderingContext2D, x: number, y: n
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Satellite thumbnail: works in villages too                          */
+/* ------------------------------------------------------------------ */
+
+// Esri returns a flat grey "Map data not yet available" tile where it has no imagery at that zoom.
+// Such a tile is almost uniform, so a very low colour variation means "no data".
+function tileLooksBlank(img: HTMLImageElement): boolean {
+  try {
+    const c = document.createElement('canvas')
+    c.width = 16
+    c.height = 16
+    const x = c.getContext('2d', { willReadFrequently: true })
+    if (!x) return false
+    x.drawImage(img, 0, 0, 16, 16)
+    const d = x.getImageData(0, 0, 16, 16).data
+    let sum = 0
+    let sum2 = 0
+    const n = 256
+    for (let i = 0; i < d.length; i += 4) {
+      const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+      sum += lum
+      sum2 += lum * lum
+    }
+    const mean = sum / n
+    const std = Math.sqrt(Math.max(0, sum2 / n - mean * mean))
+    return std < 4
+  } catch {
+    return false
+  }
+}
+
 async function loadTile(z: number, x: number, y: number): Promise<HTMLImageElement | null> {
   const n = 2 ** z
   if (x < 0 || y < 0 || x >= n || y >= n) return null
   const urls = [
     `https://mt0.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`,
+    `https://mt1.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${z}`,
     `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
   ]
   for (const url of urls) {
     try {
       const img = await loadImage(url)
-      if (img.width >= 8) return img
+      if (img.width < 8) continue
+      if (tileLooksBlank(img)) continue
+      return img
     } catch {
       continue
     }
@@ -126,8 +160,12 @@ async function loadTile(z: number, x: number, y: number): Promise<HTMLImageEleme
   return null
 }
 
-async function buildCenteredSatellite(lat: number, lon: number, outSize: number): Promise<HTMLCanvasElement | null> {
-  const zoom = 17
+async function buildAtZoom(
+  lat: number,
+  lon: number,
+  outSize: number,
+  zoom: number,
+): Promise<{ canvas: HTMLCanvasElement | null; loaded: number; total: number }> {
   const p = latLngToPixel(lat, lon, zoom)
   const tileSize = 256
   const half = outSize / 2
@@ -140,15 +178,19 @@ async function buildCenteredSatellite(lat: number, lon: number, outSize: number)
   mosaic.width = outSize
   mosaic.height = outSize
   const mctx = mosaic.getContext('2d')
-  if (!mctx) return null
+  if (!mctx) return { canvas: null, loaded: 0, total: 0 }
 
+  let loaded = 0
+  let total = 0
   const jobs: Array<Promise<void>> = []
   for (let ty = minY; ty <= maxY; ty++) {
     for (let tx = minX; tx <= maxX; tx++) {
+      total += 1
       jobs.push(
         (async () => {
           const img = await loadTile(zoom, tx, ty)
           if (!img) return
+          loaded += 1
           const dx = tx * tileSize - (p.x - half)
           const dy = ty * tileSize - (p.y - half)
           mctx.drawImage(img, dx, dy, tileSize, tileSize)
@@ -157,7 +199,19 @@ async function buildCenteredSatellite(lat: number, lon: number, outSize: number)
     }
   }
   await Promise.all(jobs)
-  return mosaic
+  return { canvas: mosaic, loaded, total }
+}
+
+// Tries a close zoom first, then steps out until real imagery covers the box.
+async function buildCenteredSatellite(lat: number, lon: number, outSize: number): Promise<HTMLCanvasElement | null> {
+  let best: { canvas: HTMLCanvasElement | null; ratio: number } = { canvas: null, ratio: 0 }
+  for (const zoom of [17, 16, 15, 14]) {
+    const r = await buildAtZoom(lat, lon, outSize, zoom)
+    const ratio = r.total > 0 ? r.loaded / r.total : 0
+    if (r.canvas && ratio >= 0.99) return r.canvas
+    if (r.canvas && ratio > best.ratio) best = { canvas: r.canvas, ratio }
+  }
+  return best.ratio >= 0.5 ? best.canvas : null
 }
 
 function drawCameraBadge(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, s: number) {
