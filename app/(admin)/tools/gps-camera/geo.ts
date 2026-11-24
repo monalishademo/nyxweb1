@@ -64,11 +64,36 @@ function extractCoordsFromQuery(q: string): { lat: number; lon: number } | null 
     return { lat: parseFloat(dataMatch[1]), lon: parseFloat(dataMatch[2]) }
   }
 
-  const qMatch = q.match(/[?&](?:q|ll)=([+-]?\d{1,2}\.\d+),([+-]?\d{1,3}\.\d+)/)
+  const qMatch = q.match(/[?&](?:q|ll|center)=([+-]?\d{1,2}\.\d+)(?:,|%2C)([+-]?\d{1,3}\.\d+)/i)
   if (qMatch) {
     return { lat: parseFloat(qMatch[1]), lon: parseFloat(qMatch[2]) }
   }
 
+  return null
+}
+
+function isShortMapsUrl(q: string): boolean {
+  return /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(q)
+}
+
+// ---------- Resolve short maps.app.goo.gl URL without route.ts ----------
+async function resolveShortMapsUrl(shortUrl: string, signal?: AbortSignal): Promise<{ lat: number; lon: number } | null> {
+  const proxies = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(shortUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(shortUrl)}`,
+  ]
+
+  for (const proxyUrl of proxies) {
+    try {
+      const res = await fetch(proxyUrl, { signal })
+      if (!res.ok) continue
+      const html = await res.text()
+      const coords = extractCoordsFromQuery(html)
+      if (coords) return coords
+    } catch (e: any) {
+      if (e?.name === 'AbortError') throw e
+    }
+  }
   return null
 }
 
@@ -203,7 +228,17 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
   const trimmed = query.trim()
   if (trimmed.length < 2) return []
 
-  // 1. Check if user pasted a Google Maps URL or Latitude, Longitude
+  // 1. Short Google Maps URL (maps.app.goo.gl / goo.gl/maps) without route.ts
+  if (isShortMapsUrl(trimmed)) {
+    const coords = await resolveShortMapsUrl(trimmed, signal)
+    if (coords) {
+      const exact = await reversePlace(coords.lat, coords.lon, signal)
+      return [exact]
+    }
+    return []
+  }
+
+  // 2. Check if user pasted a full Google Maps URL or Latitude, Longitude
   const coords = extractCoordsFromQuery(trimmed)
   if (coords) {
     const exact = await reversePlace(coords.lat, coords.lon, signal)
@@ -214,7 +249,7 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
   const cached = searchCache.get(cacheKey)
   if (cached) return cached
 
-  // 2. Fast Photon Autocomplete API (no 1-sec delay, finds schools, POIs, villages)
+  // 3. Fast Photon Autocomplete API (no 1-sec delay, finds schools, POIs, villages)
   try {
     const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(trimmed)}&limit=8&lang=en`
     const res = await fetch(photonUrl, { headers: { Accept: 'application/json' }, signal })
@@ -230,7 +265,7 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
     if (e?.name === 'AbortError') throw e
   }
 
-  // 3. Fallback to Nominatim if Photon returns empty
+  // 4. Fallback to Nominatim if Photon returns empty
   try {
     const nomUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=en&q=${encodeURIComponent(trimmed)}`
     const res = await fetch(nomUrl, { headers: { Accept: 'application/json' }, signal })
