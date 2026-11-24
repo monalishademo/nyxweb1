@@ -9,195 +9,254 @@ export type PlaceHit = {
   lon: number
 }
 
+// ---------- Plus Code (Open Location Code), integer math ----------
 const OLC_ALPHABET = '23456789CFGHJMPQRVWX'
-const OLC_PAIR_RES = [20, 1, 0.05, 0.0025, 0.000125]
+const LAT_MULT = 8000 * 3125 // 25,000,000 per degree (11-digit precision)
+const LON_MULT = 8000 * 1024 // 8,192,000 per degree
 
 export function toPlusCode(lat: number, lon: number): string {
-  let latitude = Math.min(90, Math.max(-90, lat))
-  if (latitude >= 90) latitude = 89.99999999
-  let longitude = lon
-  while (longitude < -180) longitude += 360
-  while (longitude >= 180) longitude -= 360
+  const maxLat = 180 * LAT_MULT
+  const maxLon = 360 * LON_MULT
 
-  let remainingLat = latitude + 90
-  let remainingLon = longitude + 180
-  let full = ''
+  let latVal = Math.floor(Math.round((Math.min(90, Math.max(-90, lat)) + 90) * LAT_MULT * 1e6) / 1e6)
+  latVal = Math.min(latVal, maxLat - 1)
+
+  let lonVal = Math.floor(Math.round((lon + 180) * LON_MULT * 1e6) / 1e6)
+  lonVal = ((lonVal % maxLon) + maxLon) % maxLon
+
+  let code = ''
+
+  const gridLat = latVal % 5
+  const gridLon = lonVal % 4
+  code = OLC_ALPHABET.charAt(gridLat * 4 + gridLon) + code
+  latVal = Math.floor(latVal / 5)
+  lonVal = Math.floor(lonVal / 4)
 
   for (let i = 0; i < 5; i++) {
-    const latDigit = Math.min(19, Math.floor(remainingLat / OLC_PAIR_RES[i]))
-    remainingLat -= latDigit * OLC_PAIR_RES[i]
-    const lonDigit = Math.min(19, Math.floor(remainingLon / OLC_PAIR_RES[i]))
-    remainingLon -= lonDigit * OLC_PAIR_RES[i]
-    full += OLC_ALPHABET.charAt(latDigit) + OLC_ALPHABET.charAt(lonDigit)
-    if (i === 3) full += '+'
+    code = OLC_ALPHABET.charAt(lonVal % 20) + code
+    code = OLC_ALPHABET.charAt(latVal % 20) + code
+    latVal = Math.floor(latVal / 20)
+    lonVal = Math.floor(lonVal / 20)
   }
 
-  const row = Math.min(4, Math.floor(remainingLat / (0.000125 / 5)))
-  const col = Math.min(3, Math.floor(remainingLon / (0.000125 / 4)))
-  full += OLC_ALPHABET.charAt(row * 4 + col)
-
-  const local = `${full.slice(4, 8)}+${full.slice(9, 12)}`
-  return local.charAt(0) + local.slice(1).toLowerCase()
+  const full = `${code.slice(0, 8)}+${code.slice(8)}`
+  return full.slice(4) // e.g. "R6JR+GHH"
 }
 
-/* ------------------------------------------------------------------ */
-/* Helpers                                                             */
-/* ------------------------------------------------------------------ */
-
-async function fetchJson(url: string, timeoutMs = 7000): Promise<any | null> {
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs)
-  try {
-    // No custom headers: browsers block User-Agent, and extra headers can trigger CORS preflight failures.
-    const res = await fetch(url, { signal: ctrl.signal })
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timer)
+// ---------- Extract Lat/Lon from Google Maps URL or raw coordinates ----------
+function extractCoordsFromQuery(q: string): { lat: number; lon: number } | null {
+  // 1. Direct "lat, lon" e.g. "24.876128, 86.210956"
+  const direct = q.match(/^([+-]?\d{1,2}\.\d+)\s*,\s*([+-]?\d{1,3}\.\d+)$/)
+  if (direct) {
+    const lat = parseFloat(direct[1])
+    const lon = parseFloat(direct[2])
+    if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return { lat, lon }
   }
+
+  // 2. Google Maps URL "@lat,lon" or "!3dLAT!4dLON" or "?q=lat,lon"
+  const atMatch = q.match(/@([+-]?\d{1,2}\.\d+),([+-]?\d{1,3}\.\d+)/)
+  if (atMatch) {
+    return { lat: parseFloat(atMatch[1]), lon: parseFloat(atMatch[2]) }
+  }
+
+  const dataMatch = q.match(/!3d([+-]?\d{1,2}\.\d+)!4d([+-]?\d{1,3}\.\d+)/)
+  if (dataMatch) {
+    return { lat: parseFloat(dataMatch[1]), lon: parseFloat(dataMatch[2]) }
+  }
+
+  const qMatch = q.match(/[?&](?:q|ll)=([+-]?\d{1,2}\.\d+),([+-]?\d{1,3}\.\d+)/)
+  if (qMatch) {
+    return { lat: parseFloat(qMatch[1]), lon: parseFloat(qMatch[2]) }
+  }
+
+  return null
 }
 
-// Most useful place name first: village / town / city, then smaller or larger units.
-function pickPlace(addr: Record<string, string | undefined>): string {
-  return (
-    addr.village ||
-    addr.town ||
-    addr.city ||
-    addr.hamlet ||
-    addr.suburb ||
-    addr.neighbourhood ||
-    addr.municipality ||
-    addr.city_district ||
-    addr.county ||
-    addr.state_district ||
-    'Location'
-  )
+// ---------- helpers ----------
+function dedupeParts(items: Array<string | undefined>): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of items) {
+    const val = (raw || '').trim()
+    if (!val) continue
+    const key = val.toLowerCase()
+    if (!seen.has(key)) {
+      seen.add(key)
+      out.push(val)
+    }
+  }
+  return out
 }
 
-function buildHit(
+function makeHit(
+  parts: {
+    street?: string
+    locality?: string
+    place: string
+    district?: string
+    state?: string
+    country?: string
+    postcode?: string
+    countryCode?: string
+  },
   lat: number,
   lon: number,
   displayName: string,
-  place: string,
-  state: string,
-  postcode: string,
-  country: string,
-  countryCode: string,
 ): PlaceHit {
+  const { street, locality, place, district, state = '', country = '', postcode = '', countryCode = '' } = parts
   const plus = toPlusCode(lat, lon)
+
+  const titleParts = dedupeParts([place, state, country])
+  const locationName = titleParts.join(', ')
+
+  const statePin = [state, postcode].filter(Boolean).join(' ')
+  const addrParts = dedupeParts([plus, street, locality, place, district, statePin, country])
+
   return {
     displayName,
-    locationName: [place, state, country].filter(Boolean).join(', '),
-    address: `${plus}, ${place}, ${state} ${postcode}, ${country}`.replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' '),
+    locationName,
+    address: addrParts.join(', '),
     latitude: lat.toFixed(6),
     longitude: lon.toFixed(6),
-    countryCode: (countryCode || 'in').toUpperCase(),
+    countryCode: countryCode.toUpperCase(),
     lat,
     lon,
   }
 }
 
-function fromNominatim(item: any, latOverride?: number, lonOverride?: number): PlaceHit {
-  const lat = latOverride ?? parseFloat(item.lat)
-  const lon = lonOverride ?? parseFloat(item.lon)
-  const addr = item.address || {}
-  return buildHit(
+function fromNominatim(item: any, lat: number, lon: number): PlaceHit {
+  const a = item.address || {}
+  const place =
+    a.city || a.town || a.village || a.suburb || a.municipality || a.county || a.state_district || item.name || 'Location'
+  const street = [a.house_number, a.road || a.pedestrian || a.residential].filter(Boolean).join(', ')
+  const locality = a.neighbourhood || a.hamlet || a.quarter || a.suburb || ''
+  const district = a.state_district && a.state_district !== place ? a.state_district : ''
+
+  return makeHit(
+    {
+      street,
+      locality,
+      place,
+      district,
+      state: a.state,
+      country: a.country,
+      postcode: a.postcode,
+      countryCode: a.country_code || '',
+    },
     lat,
     lon,
-    item.display_name || `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
-    pickPlace(addr),
-    addr.state || '',
-    addr.postcode || '',
-    addr.country || '',
-    addr.country_code || 'in',
+    item.display_name,
   )
 }
 
-function fromPhoton(f: any): PlaceHit | null {
-  const coords = f?.geometry?.coordinates
-  const p = f?.properties || {}
-  if (!Array.isArray(coords) || coords.length < 2) return null
-  const lon = Number(coords[0])
-  const lat = Number(coords[1])
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
-  const place = p.name || p.city || p.district || p.county || 'Location'
-  const displayName = [p.name, p.district, p.county, p.state, p.country].filter(Boolean).join(', ')
-  return buildHit(lat, lon, displayName, place, p.state || '', p.postcode || '', p.country || '', p.countrycode || 'in')
+function fromPhoton(feature: any): PlaceHit {
+  const p = feature.properties || {}
+  const [lon, lat] = feature.geometry?.coordinates || [0, 0]
+  const place = p.city || p.town || p.village || p.locality || p.name || p.county || 'Location'
+  const street = [p.housenumber, p.street].filter(Boolean).join(', ')
+  const locality = p.name && p.name !== place ? p.name : p.district || ''
+  const district = p.county && p.county !== place ? p.county : ''
+  const state = p.state || ''
+  const country = p.country || ''
+  const postcode = p.postcode || ''
+
+  const displayName = dedupeParts([p.name, p.street, p.district, p.city || p.town || p.village, p.county, state, postcode, country]).join(', ')
+
+  return makeHit(
+    {
+      street,
+      locality,
+      place,
+      district,
+      state,
+      country,
+      postcode,
+      countryCode: p.countrycode || '',
+    },
+    lat,
+    lon,
+    displayName || `${lat.toFixed(5)}, ${lon.toFixed(5)}`,
+  )
 }
 
-function parseLatLon(q: string): { lat: number; lon: number } | null {
-  const m = q.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/)
-  if (!m) return null
-  const lat = parseFloat(m[1])
-  const lon = parseFloat(m[2])
-  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null
-  return { lat, lon }
-}
+// ---------- Fast Result Cache ----------
+const searchCache = new Map<string, PlaceHit[]>()
+const reverseCache = new Map<string, PlaceHit>()
 
-/* ------------------------------------------------------------------ */
-/* Offline fallback (only used when BOTH online services fail)         */
-/* ------------------------------------------------------------------ */
-
-function local(name: string, state: string, postcode: string, lat: number, lon: number): PlaceHit {
-  return buildHit(lat, lon, `${name}, ${state}, India`, name, state, postcode, 'India', 'IN')
-}
+// ---------- Offline fallback ----------
+const mkLocal = (place: string, state: string, district: string, lat: number, lon: number, postcode: string) =>
+  makeHit(
+    { place, district, state, country: 'India', postcode, countryCode: 'IN' },
+    lat,
+    lon,
+    `${place}, ${district}, ${state}, India`,
+  )
 
 const LOCAL_PLACES: PlaceHit[] = [
-  local('Binpur-I', 'West Bengal', '721501', 22.584861, 87.049663),
-  local('Lalgarh', 'West Bengal', '721516', 22.8717, 87.2911),
-  local('Simlapal', 'West Bengal', '722151', 22.9562, 87.0825),
+  mkLocal('Binpur-I', 'West Bengal', 'Paschim Medinipur', 22.584861, 87.049663, '721501'),
+  mkLocal('Simlapal', 'West Bengal', 'Bankura', 22.9562, 87.0825, '722151'),
+  mkLocal('Khaira', 'Bihar', 'Jamui', 24.876128, 86.210956, '811317'),
 ]
 
-/* ------------------------------------------------------------------ */
-/* Search                                                              */
-/* ------------------------------------------------------------------ */
+// ---------- Public Search API (Instant Photon + Nominatim fallback + URL/Coords) ----------
+export async function searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceHit[]> {
+  const trimmed = query.trim()
+  if (trimmed.length < 2) return []
 
-export async function searchPlaces(query: string): Promise<PlaceHit[]> {
-  const q = query.trim()
-  if (q.length < 2) return []
-
-  // 1) Typed coordinates, e.g. "22.5848, 87.0496"
-  const ll = parseLatLon(q)
-  if (ll) return [await reversePlace(ll.lat, ll.lon)]
-
-  const results: PlaceHit[] = []
-  const addUnique = (hit: PlaceHit) => {
-    const dup = results.some((r) => Math.abs(r.lat - hit.lat) < 0.002 && Math.abs(r.lon - hit.lon) < 0.002)
-    if (!dup) results.push(hit)
+  // 1. Check if user pasted a Google Maps URL or Latitude, Longitude
+  const coords = extractCoordsFromQuery(trimmed)
+  if (coords) {
+    const exact = await reversePlace(coords.lat, coords.lon, signal)
+    return [exact]
   }
 
-  // 2) Nominatim (OpenStreetMap)
-  const nom = await fetchJson(
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=10&accept-language=en&q=${encodeURIComponent(q)}`,
-  )
-  if (Array.isArray(nom)) nom.forEach((item) => addUnique(fromNominatim(item)))
+  const cacheKey = trimmed.toLowerCase()
+  const cached = searchCache.get(cacheKey)
+  if (cached) return cached
 
-  // 3) Photon (OpenStreetMap, different index) when Nominatim finds little or fails
-  if (results.length < 3) {
-    const ph = await fetchJson(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lang=en`)
-    if (ph && Array.isArray(ph.features)) {
-      ph.features.forEach((f: any) => {
-        const hit = fromPhoton(f)
-        if (hit) addUnique(hit)
-      })
+  // 2. Fast Photon Autocomplete API (no 1-sec delay, finds schools, POIs, villages)
+  try {
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(trimmed)}&limit=8&lang=en`
+    const res = await fetch(photonUrl, { headers: { Accept: 'application/json' }, signal })
+    if (res.ok) {
+      const json = await res.json()
+      if (Array.isArray(json?.features) && json.features.length > 0) {
+        const hits = json.features.map((f: any) => fromPhoton(f))
+        searchCache.set(cacheKey, hits)
+        return hits
+      }
     }
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw e
   }
 
-  if (results.length > 0) return results.slice(0, 10)
+  // 3. Fallback to Nominatim if Photon returns empty
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=en&q=${encodeURIComponent(trimmed)}`
+    const res = await fetch(nomUrl, { headers: { Accept: 'application/json' }, signal })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const hits = data.map((item: any) => fromNominatim(item, parseFloat(item.lat), parseFloat(item.lon)))
+        searchCache.set(cacheKey, hits)
+        return hits
+      }
+    }
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw e
+  }
 
-  // 4) Offline fallback: only real matches, never unrelated places
-  const lower = q.toLowerCase()
-  return LOCAL_PLACES.filter((p) => p.displayName.toLowerCase().includes(lower))
+  return LOCAL_PLACES.filter(
+    (p) => p.displayName.toLowerCase().includes(cacheKey) || p.address.toLowerCase().includes(cacheKey),
+  )
 }
 
 export function flagUrlFor(countryCode: string): string | null {
-  if (!countryCode || countryCode.length !== 2) return 'https://flagcdn.com/w80/in.png'
+  if (!countryCode || countryCode.length !== 2) return null
   return `https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`
 }
 
-export function placeFromCoords(lat: number, lon: number, countryCode = 'IN'): PlaceHit {
+export function placeFromCoords(lat: number, lon: number): PlaceHit {
   const plus = toPlusCode(lat, lon)
   return {
     displayName: `${lat.toFixed(6)}, ${lon.toFixed(6)}`,
@@ -205,24 +264,30 @@ export function placeFromCoords(lat: number, lon: number, countryCode = 'IN'): P
     address: plus,
     latitude: lat.toFixed(6),
     longitude: lon.toFixed(6),
-    countryCode,
+    countryCode: '',
     lat,
     lon,
   }
 }
 
-export async function reversePlace(lat: number, lon: number): Promise<PlaceHit> {
-  // Nominatim reverse at the most detailed level (zoom 18 = house / village)
-  const nom = await fetchJson(
-    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=en&lat=${lat}&lon=${lon}`,
-  )
-  if (nom && nom.display_name) return fromNominatim(nom, lat, lon)
+export async function reversePlace(lat: number, lon: number, signal?: AbortSignal): Promise<PlaceHit> {
+  const key = `${lat.toFixed(5)},${lon.toFixed(5)}`
+  const cached = reverseCache.get(key)
+  if (cached) return cached
 
-  // Photon reverse as backup
-  const ph = await fetchJson(`https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}&lang=en`)
-  if (ph && Array.isArray(ph.features) && ph.features[0]) {
-    const hit = fromPhoton(ph.features[0])
-    if (hit) return { ...hit, lat, lon, latitude: lat.toFixed(6), longitude: lon.toFixed(6) }
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=en&lat=${lat}&lon=${lon}`
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, signal })
+    if (res.ok) {
+      const item = await res.json()
+      if (item && item.display_name) {
+        const hit = fromNominatim(item, lat, lon)
+        reverseCache.set(key, hit)
+        return hit
+      }
+    }
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw e
   }
 
   return placeFromCoords(lat, lon)
